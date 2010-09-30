@@ -4,6 +4,7 @@ import (
 	"net"
 	"log"
 	"os"
+	"fmt"
 )
 
 const (
@@ -117,29 +118,52 @@ func WriteLogin(conn net.Conn) (err os.Error) {
 	return err
 }
 
-func main() {
-	listener, e := net.Listen("tcp", ":35124")
+func StartSession(conn net.Conn) {
+	log.Stderr("Client connected from ", conn.RemoteAddr())
+
+	username, e := ReadHandshake(conn)
 	if e != nil {
-		log.Exit("Listen: ", e.String())
-	}
-
-	conn, e2 := listener.Accept()
-	if e2 != nil {
-		log.Exit("Accept: ", e2.String())
-	}
-
-	username, e3 := ReadHandshake(conn)
-	if e3 != nil {
-		log.Exit("ReadHandshake: ", e3.String())
+		panic(fmt.Sprint("ReadHandshake: ", e.String()))
 	}
 	log.Stderr("username: ", username)
 	WriteHandshake(conn, "-")
 
-	username2, password, e4 := ReadLogin(conn)
-	if e4 != nil {
-		log.Exit("ReadLogin: ", e4.String())
+	_, _, e2 := ReadLogin(conn)
+	if e2 != nil {
+		panic(fmt.Sprint("ReadLogin: ", e2.String()))
 	}
-	log.Stderr("username: ", username2)
-	log.Stderr("password: ", password)
 	WriteLogin(conn)
+}
+
+func ServeSession(conn net.Conn) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Stderr(err)
+		}
+		conn.Close()
+	}()
+
+	StartSession(conn)
+}
+
+func Serve(addr string) {
+	listener, e := net.Listen("tcp", addr)
+	if e != nil {
+		log.Exit("Listen: ", e.String())
+	}
+	log.Stderr("Listening on ", addr)
+
+	for {
+		conn, e2 := listener.Accept()
+		if e2 != nil {
+			log.Stderr("Accept: ", e2.String())
+			continue
+		}
+
+		go ServeSession(conn)
+	}
+}
+
+func main() {
+	Serve(":25565")
 }
