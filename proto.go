@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"fmt"
+	"encoding/binary"
 )
 
 const (
@@ -22,36 +23,30 @@ const (
 )
 
 func ReadByte(conn net.Conn) (b byte, err os.Error) {
-	bs := make([]byte, 1)
-	_, err = conn.Read(bs)
-	return bs[0], err
+	err = binary.Read(conn, binary.BigEndian, &b)
+	return
 }
 
 func WriteByte(conn net.Conn, b byte) (err os.Error) {
-	_, err = conn.Write([]byte{b})
-	return
+	return binary.Write(conn, binary.BigEndian, b)
 }
 
 func ReadInt16(conn net.Conn) (i int16, err os.Error) {
-	bs := make([]byte, 2)
-	_, err = conn.Read(bs)
-	return int16(bs[0]) << 8 | int16(bs[1]), err
+	err = binary.Read(conn, binary.BigEndian, &i)
+	return
 }
 
 func WriteInt16(conn net.Conn, i int16) (err os.Error) {
-	_, err = conn.Write([]byte{byte(i >> 8), byte(i)})
-	return
+	return binary.Write(conn, binary.BigEndian, i)
 }
 
 func ReadInt32(conn net.Conn) (i int32, err os.Error) {
-	bs := make([]byte, 4)
-	_, err = conn.Read(bs)
-	return int32(uint32(bs[0]) << 24 | uint32(bs[1]) << 16 | uint32(bs[2]) << 8 | uint32(bs[3])), err
+	err = binary.Read(conn, binary.BigEndian, &i)
+	return
 }
 
 func WriteInt32(conn net.Conn, i int32) (err os.Error) {
-	_, err = conn.Write([]byte{byte(i >> 24), byte(i >> 16), byte(i >> 8), byte(i)})
-	return
+	return binary.Write(conn, binary.BigEndian, i)
 }
 
 func ReadString(conn net.Conn) (s string, err os.Error) {
@@ -90,9 +85,9 @@ func ReadHandshake(conn net.Conn) (username string, err os.Error) {
 }
 
 func WriteHandshake(conn net.Conn, reply string) (err os.Error) {
-	_, err = conn.Write([]byte{packetIDHandshake})
+	err = WriteByte(conn, packetIDHandshake)
 	if err != nil {
-		return err
+		return
 	}
 
 	return WriteString(conn, reply)
