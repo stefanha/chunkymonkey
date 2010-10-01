@@ -6,6 +6,10 @@ import (
 	"fmt"
 )
 
+type XYZ struct {
+	x, y, z int32
+}
+
 func StartSession(conn net.Conn) {
 	username, e := ReadHandshake(conn)
 	if e != nil {
@@ -19,6 +23,8 @@ func StartSession(conn net.Conn) {
 		panic(fmt.Sprint("ReadLogin: ", e2.String()))
 	}
 	WriteLogin(conn)
+
+	WriteSpawnPosition(conn, &XYZ{0, 64, 0})
 }
 
 func ServeSession(conn net.Conn) {
