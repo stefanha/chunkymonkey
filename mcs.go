@@ -25,6 +25,7 @@ func StartSession(conn net.Conn) {
 	WriteLogin(conn)
 
 	WriteSpawnPosition(conn, &XYZ{0, 64, 0})
+	WritePlayerInventory(conn)
 }
 
 func ServeSession(conn net.Conn) {

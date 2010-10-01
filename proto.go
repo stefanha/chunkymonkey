@@ -12,7 +12,13 @@ const (
 	// Packet type IDs
 	packetIDLogin = 0x1
 	packetIDHandshake = 0x2
+	packetIDPlayerInventory = 0x5
 	packetIDSpawnPosition = 0x6
+
+	// Inventory types
+	inventoryTypeMain = -1
+	inventoryTypeArmor = -2
+	inventoryTypeCrafting = -3
 )
 
 func ReadByte(conn net.Conn) (b byte, err os.Error) {
@@ -26,13 +32,13 @@ func WriteByte(conn net.Conn, b byte) (err os.Error) {
 	return
 }
 
-func ReadShort(conn net.Conn) (i int, err os.Error) {
+func ReadInt16(conn net.Conn) (i int16, err os.Error) {
 	bs := make([]byte, 2)
 	_, err = conn.Read(bs)
-	return int(uint16(bs[0]) << 8 | uint16(bs[1])), err
+	return int16(bs[0]) << 8 | int16(bs[1]), err
 }
 
-func WriteShort(conn net.Conn, i int) (err os.Error) {
+func WriteInt16(conn net.Conn, i int16) (err os.Error) {
 	_, err = conn.Write([]byte{byte(i >> 8), byte(i)})
 	return
 }
@@ -49,12 +55,12 @@ func WriteInt32(conn net.Conn, i int32) (err os.Error) {
 }
 
 func ReadString(conn net.Conn) (s string, err os.Error) {
-	n, e := ReadShort(conn)
+	n, e := ReadInt16(conn)
 	if e != nil {
 		return "", e
 	}
 
-	bs := make([]byte, n)
+	bs := make([]byte, uint16(n))
 	_, err = conn.Read(bs)
 	return string(bs), err
 }
@@ -62,7 +68,7 @@ func ReadString(conn net.Conn) (s string, err os.Error) {
 func WriteString(conn net.Conn, s string) (err os.Error) {
 	bs := []byte(s)
 
-	err = WriteShort(conn, len(bs))
+	err = WriteInt16(conn, int16(len(bs)))
 	if err != nil {
 		return err
 	}
@@ -144,5 +150,42 @@ func WriteSpawnPosition(conn net.Conn, position *XYZ) (err os.Error) {
 	}
 
 	err = WriteInt32(conn, position.z)
+	return
+}
+
+func WritePlayerInventory(conn net.Conn) (err os.Error) {
+	type InventoryType struct {
+		inventoryType int32
+		count int16
+	}
+	var inventories = []InventoryType{
+		InventoryType{inventoryTypeMain, 36},
+		InventoryType{inventoryTypeArmor, 4},
+		InventoryType{inventoryTypeCrafting, 4},
+	}
+
+	for _, inventory := range inventories {
+		err = WriteByte(conn, packetIDPlayerInventory)
+		if err != nil {
+			return
+		}
+
+		err = WriteInt32(conn, inventory.inventoryType)
+		if err != nil {
+			return
+		}
+
+		err = WriteInt16(conn, inventory.count)
+		if err != nil {
+			return
+		}
+
+		for i := int16(0); i < inventory.count; i++ {
+			err = WriteInt16(conn, -1)
+			if err != nil {
+				return
+			}
+		}
+	}
 	return
 }
