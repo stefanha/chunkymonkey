@@ -15,6 +15,7 @@ const (
 	packetIDHandshake = 0x2
 	packetIDPlayerInventory = 0x5
 	packetIDSpawnPosition = 0x6
+	packetIDPlayerPositionLook = 0xd
 
 	// Inventory types
 	inventoryTypeMain = -1
@@ -29,6 +30,18 @@ func ReadByte(conn net.Conn) (b byte, err os.Error) {
 
 func WriteByte(conn net.Conn, b byte) (err os.Error) {
 	return binary.Write(conn, binary.BigEndian, b)
+}
+
+func WriteBool(conn net.Conn, b bool) (err os.Error) {
+	var val byte
+
+	if b {
+		val = 1
+	} else {
+		val = 0
+	}
+
+	return WriteByte(conn, val)
 }
 
 func ReadInt16(conn net.Conn) (i int16, err os.Error) {
@@ -47,6 +60,14 @@ func ReadInt32(conn net.Conn) (i int32, err os.Error) {
 
 func WriteInt32(conn net.Conn, i int32) (err os.Error) {
 	return binary.Write(conn, binary.BigEndian, i)
+}
+
+func WriteFloat32(conn net.Conn, f float32) (err os.Error) {
+	return binary.Write(conn, binary.BigEndian, f)
+}
+
+func WriteFloat64(conn net.Conn, f float64) (err os.Error) {
+	return binary.Write(conn, binary.BigEndian, f)
 }
 
 func ReadString(conn net.Conn) (s string, err os.Error) {
@@ -134,17 +155,17 @@ func WriteSpawnPosition(conn net.Conn, position *XYZ) (err os.Error) {
 		return
 	}
 
-	err = WriteInt32(conn, position.x)
+	err = WriteInt32(conn, int32(position.x))
 	if err != nil {
 		return
 	}
 
-	err = WriteInt32(conn, position.y)
+	err = WriteInt32(conn, int32(position.y))
 	if err != nil {
 		return
 	}
 
-	err = WriteInt32(conn, position.z)
+	err = WriteInt32(conn, int32(position.z))
 	return
 }
 
@@ -182,5 +203,47 @@ func WritePlayerInventory(conn net.Conn) (err os.Error) {
 			}
 		}
 	}
+	return
+}
+
+func WritePlayerPositionLook(conn net.Conn, position *XYZ,
+                             orientation *Orientation, stance float64,
+                             flying bool) (err os.Error) {
+	err = WriteByte(conn, packetIDPlayerPositionLook)
+	if err != nil {
+		return
+	}
+
+	err = WriteFloat64(conn, position.x)
+	if err != nil {
+		return
+	}
+
+	err = WriteFloat64(conn, position.y)
+	if err != nil {
+		return
+	}
+
+	err = WriteFloat64(conn, stance)
+	if err != nil {
+		return
+	}
+
+	err = WriteFloat64(conn, position.z)
+	if err != nil {
+		return
+	}
+
+	err = WriteFloat32(conn, orientation.rotation)
+	if err != nil {
+		return
+	}
+
+	err = WriteFloat32(conn, orientation.pitch)
+	if err != nil {
+		return
+	}
+
+	err = WriteBool(conn, flying)
 	return
 }

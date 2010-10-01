@@ -7,7 +7,12 @@ import (
 )
 
 type XYZ struct {
-	x, y, z int32
+	x, y, z float64
+}
+
+type Orientation struct {
+	rotation float32
+	pitch float32
 }
 
 func StartSession(conn net.Conn) {
@@ -26,6 +31,8 @@ func StartSession(conn net.Conn) {
 
 	WriteSpawnPosition(conn, &XYZ{0, 64, 0})
 	WritePlayerInventory(conn)
+	WritePlayerPositionLook(conn, &XYZ{0, 64, 0}, &Orientation{0, 0},
+	                        0, false)
 }
 
 func ServeSession(conn net.Conn) {
