@@ -8,6 +8,7 @@ TARG=mcs
 GOFILES=\
 	mcs.go \
 	proto.go \
-	chunk.go
+	chunk.go \
+	game.go
 
 include $(GOROOT)/src/Make.cmd
