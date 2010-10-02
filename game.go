@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 )
@@ -15,57 +14,28 @@ type Orientation struct {
 	pitch    float32
 }
 
-type Player struct {
-	position    XYZ
-	orientation Orientation
-}
-
 type Game struct {
 	chunkManager *ChunkManager
 	mainQueue    chan func(*Game)
 }
 
-func startSession(conn net.Conn) (player *Player) {
-	username, e := ReadHandshake(conn)
-	if e != nil {
-		panic(fmt.Sprint("ReadHandshake: ", e.String()))
+func (game *Game) Login(conn net.Conn) {
+	username, err := ReadHandshake(conn)
+	if err != nil {
+		log.Stderr("ReadHandshake: ", err.String())
+		return
 	}
-	log.Stderr("username: ", username)
+	log.Stderr("Client ", conn.RemoteAddr(), " connected as ", username)
 	WriteHandshake(conn, "-")
 
-	_, _, e2 := ReadLogin(conn)
-	if e2 != nil {
-		panic(fmt.Sprint("ReadLogin: ", e2.String()))
+	_, _, err = ReadLogin(conn)
+	if err != nil {
+		log.Stderr("ReadLogin: ", err.String())
+		return
 	}
 	WriteLogin(conn)
 
-	player = &Player{
-		position:    XYZ{0, 64, 0},
-		orientation: Orientation{0, 0},
-	}
-
-	WriteSpawnPosition(conn, &player.position)
-	WritePlayerInventory(conn)
-	WritePlayerPositionLook(conn, &player.position, &player.orientation,
-		0, false)
-	return player
-}
-
-func (game *Game) serveSession(conn net.Conn) {
-	log.Stderr("Client connected from ", conn.RemoteAddr())
-
-	defer func() {
-		if err := recover(); err != nil {
-			log.Stderr(err)
-		}
-		log.Stderr("Client disconnected from ", conn.RemoteAddr())
-		conn.Close()
-	}()
-
-	player := startSession(conn)
-	game.Enqueue(func(g *Game) { g.AddPlayer(player) })
-
-	// TODO
+	StartPlayer(game, conn)
 }
 
 func (game *Game) Serve(addr string) {
@@ -82,7 +52,7 @@ func (game *Game) Serve(addr string) {
 			continue
 		}
 
-		go game.serveSession(conn)
+		go game.Login(conn)
 	}
 }
 

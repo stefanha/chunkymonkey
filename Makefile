@@ -9,6 +9,7 @@ GOFILES=\
 	mcs.go \
 	proto.go \
 	chunk.go \
-	game.go
+	game.go \
+	player.go
 
 include $(GOROOT)/src/Make.cmd
