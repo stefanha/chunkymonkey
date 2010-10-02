@@ -15,11 +15,17 @@ type Orientation struct {
 	pitch float32
 }
 
-type Game struct {
-	chunkManager *ChunkManager
+type Player struct {
+	position XYZ
+	orientation Orientation
 }
 
-func StartSession(conn net.Conn) {
+type Game struct {
+	chunkManager *ChunkManager
+	mainQueue chan func(*Game)
+}
+
+func startSession(conn net.Conn) (player *Player) {
 	username, e := ReadHandshake(conn)
 	if e != nil {
 		panic(fmt.Sprint("ReadHandshake: ", e.String()))
@@ -33,13 +39,19 @@ func StartSession(conn net.Conn) {
 	}
 	WriteLogin(conn)
 
-	WriteSpawnPosition(conn, &XYZ{0, 64, 0})
+	player = &Player {
+		position: XYZ{0, 64, 0},
+		orientation: Orientation{0, 0},
+	}
+
+	WriteSpawnPosition(conn, &player.position)
 	WritePlayerInventory(conn)
-	WritePlayerPositionLook(conn, &XYZ{0, 64, 0}, &Orientation{0, 0},
+	WritePlayerPositionLook(conn, &player.position, &player.orientation,
 	                        0, false)
+	return player
 }
 
-func ServeSession(conn net.Conn) {
+func (game *Game) serveSession(conn net.Conn) {
 	log.Stderr("Client connected from ", conn.RemoteAddr())
 
 	defer func() {
@@ -50,10 +62,13 @@ func ServeSession(conn net.Conn) {
 		conn.Close()
 	}()
 
-	StartSession(conn)
+	player := startSession(conn)
+	game.Enqueue(func(g *Game) { g.AddPlayer(player) })
+
+	// TODO
 }
 
-func Serve(addr string, game *Game) {
+func (game *Game) Serve(addr string) {
 	listener, e := net.Listen("tcp", addr)
 	if e != nil {
 		log.Exit("Listen: ", e.String())
@@ -67,6 +82,31 @@ func Serve(addr string, game *Game) {
 			continue
 		}
 
-		go ServeSession(conn)
+		go game.serveSession(conn)
 	}
+}
+
+func (game *Game) AddPlayer(player *Player) {
+	// TODO
+}
+
+func (game *Game) Enqueue(f func(*Game)) {
+	game.mainQueue <- f
+}
+
+func (game *Game) mainLoop() {
+	for {
+		f := <-game.mainQueue
+		f(game)
+	}
+}
+
+func NewGame(chunkManager *ChunkManager) (game *Game) {
+	game = &Game{
+		chunkManager: chunkManager,
+		mainQueue: make(chan func(*Game), 256),
+	}
+
+	go game.mainLoop()
+	return
 }

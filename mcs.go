@@ -6,6 +6,6 @@ import (
 
 func main() {
 	chunkManager := NewChunkManager(os.Args[1])
-	game := &Game{chunkManager}
-	Serve(":25565", game)
+	game := NewGame(chunkManager)
+	game.Serve(":25565")
 }
