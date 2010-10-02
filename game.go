@@ -12,17 +12,17 @@ type XYZ struct {
 
 type Orientation struct {
 	rotation float32
-	pitch float32
+	pitch    float32
 }
 
 type Player struct {
-	position XYZ
+	position    XYZ
 	orientation Orientation
 }
 
 type Game struct {
 	chunkManager *ChunkManager
-	mainQueue chan func(*Game)
+	mainQueue    chan func(*Game)
 }
 
 func startSession(conn net.Conn) (player *Player) {
@@ -39,15 +39,15 @@ func startSession(conn net.Conn) (player *Player) {
 	}
 	WriteLogin(conn)
 
-	player = &Player {
-		position: XYZ{0, 64, 0},
+	player = &Player{
+		position:    XYZ{0, 64, 0},
 		orientation: Orientation{0, 0},
 	}
 
 	WriteSpawnPosition(conn, &player.position)
 	WritePlayerInventory(conn)
 	WritePlayerPositionLook(conn, &player.position, &player.orientation,
-	                        0, false)
+		0, false)
 	return player
 }
 
@@ -104,7 +104,7 @@ func (game *Game) mainLoop() {
 func NewGame(chunkManager *ChunkManager) (game *Game) {
 	game = &Game{
 		chunkManager: chunkManager,
-		mainQueue: make(chan func(*Game), 256),
+		mainQueue:    make(chan func(*Game), 256),
 	}
 
 	go game.mainLoop()

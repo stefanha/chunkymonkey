@@ -11,18 +11,18 @@ import (
 
 const (
 	// Tag types
-	TagEnd = 0
-	TagByte = 1
-	TagShort = 2
-	TagInt = 3
-	TagLong = 4
-	TagFloat = 5
-	TagDouble = 6
+	TagEnd       = 0
+	TagByte      = 1
+	TagShort     = 2
+	TagInt       = 3
+	TagLong      = 4
+	TagFloat     = 5
+	TagDouble    = 6
 	TagByteArray = 7
-	TagString = 8
-	TagList = 9
-	TagCompound = 10
-	TagNamed = 0x80
+	TagString    = 8
+	TagList      = 9
+	TagCompound  = 10
+	TagNamed     = 0x80
 )
 
 type Tag interface {
@@ -78,7 +78,7 @@ func (end *End) Lookup(path string) Tag {
 
 type NamedTag struct {
 	name string
-	tag Tag
+	tag  Tag
 }
 
 func (n *NamedTag) GetType() byte {
@@ -321,7 +321,7 @@ func (*List) Lookup(path string) Tag {
 }
 
 type Compound struct {
-	tags map[string] *NamedTag
+	tags map[string]*NamedTag
 }
 
 func (*Compound) GetType() byte {
@@ -373,7 +373,7 @@ func Read(reader io.Reader) (compound *NamedTag, err os.Error) {
 		return
 	}
 
-	if compound.GetType() != TagNamed | TagCompound {
+	if compound.GetType() != TagNamed|TagCompound {
 		return nil, os.NewError("Expected named compound tag")
 	}
 	return

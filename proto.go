@@ -11,15 +11,15 @@ const (
 	protocolVersion = 2
 
 	// Packet type IDs
-	packetIDLogin = 0x1
-	packetIDHandshake = 0x2
-	packetIDPlayerInventory = 0x5
-	packetIDSpawnPosition = 0x6
+	packetIDLogin              = 0x1
+	packetIDHandshake          = 0x2
+	packetIDPlayerInventory    = 0x5
+	packetIDSpawnPosition      = 0x6
 	packetIDPlayerPositionLook = 0xd
 
 	// Inventory types
-	inventoryTypeMain = -1
-	inventoryTypeArmor = -2
+	inventoryTypeMain     = -1
+	inventoryTypeArmor    = -2
 	inventoryTypeCrafting = -3
 )
 
@@ -172,7 +172,7 @@ func WriteSpawnPosition(conn net.Conn, position *XYZ) (err os.Error) {
 func WritePlayerInventory(conn net.Conn) (err os.Error) {
 	type InventoryType struct {
 		inventoryType int32
-		count int16
+		count         int16
 	}
 	var inventories = []InventoryType{
 		InventoryType{inventoryTypeMain, 36},
@@ -206,9 +206,7 @@ func WritePlayerInventory(conn net.Conn) (err os.Error) {
 	return
 }
 
-func WritePlayerPositionLook(conn net.Conn, position *XYZ,
-                             orientation *Orientation, stance float64,
-                             flying bool) (err os.Error) {
+func WritePlayerPositionLook(conn net.Conn, position *XYZ, orientation *Orientation, stance float64, flying bool) (err os.Error) {
 	err = WriteByte(conn, packetIDPlayerPositionLook)
 	if err != nil {
 		return
