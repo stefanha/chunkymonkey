@@ -1,7 +1,7 @@
 package main
 
 import (
-	"net"
+	"io"
 	"os"
 	"fmt"
 	"encoding/binary"
@@ -23,16 +23,16 @@ const (
 	inventoryTypeCrafting = -3
 )
 
-func ReadByte(conn net.Conn) (b byte, err os.Error) {
-	err = binary.Read(conn, binary.BigEndian, &b)
+func ReadByte(reader io.Reader) (b byte, err os.Error) {
+	err = binary.Read(reader, binary.BigEndian, &b)
 	return
 }
 
-func WriteByte(conn net.Conn, b byte) (err os.Error) {
-	return binary.Write(conn, binary.BigEndian, b)
+func WriteByte(writer io.Writer, b byte) (err os.Error) {
+	return binary.Write(writer, binary.BigEndian, b)
 }
 
-func WriteBool(conn net.Conn, b bool) (err os.Error) {
+func WriteBool(writer io.Writer, b bool) (err os.Error) {
 	var val byte
 
 	if b {
@@ -41,60 +41,60 @@ func WriteBool(conn net.Conn, b bool) (err os.Error) {
 		val = 0
 	}
 
-	return WriteByte(conn, val)
+	return WriteByte(writer, val)
 }
 
-func ReadInt16(conn net.Conn) (i int16, err os.Error) {
-	err = binary.Read(conn, binary.BigEndian, &i)
+func ReadInt16(reader io.Reader) (i int16, err os.Error) {
+	err = binary.Read(reader, binary.BigEndian, &i)
 	return
 }
 
-func WriteInt16(conn net.Conn, i int16) (err os.Error) {
-	return binary.Write(conn, binary.BigEndian, i)
+func WriteInt16(writer io.Writer, i int16) (err os.Error) {
+	return binary.Write(writer, binary.BigEndian, i)
 }
 
-func ReadInt32(conn net.Conn) (i int32, err os.Error) {
-	err = binary.Read(conn, binary.BigEndian, &i)
+func ReadInt32(reader io.Reader) (i int32, err os.Error) {
+	err = binary.Read(reader, binary.BigEndian, &i)
 	return
 }
 
-func WriteInt32(conn net.Conn, i int32) (err os.Error) {
-	return binary.Write(conn, binary.BigEndian, i)
+func WriteInt32(writer io.Writer, i int32) (err os.Error) {
+	return binary.Write(writer, binary.BigEndian, i)
 }
 
-func WriteFloat32(conn net.Conn, f float32) (err os.Error) {
-	return binary.Write(conn, binary.BigEndian, f)
+func WriteFloat32(writer io.Writer, f float32) (err os.Error) {
+	return binary.Write(writer, binary.BigEndian, f)
 }
 
-func WriteFloat64(conn net.Conn, f float64) (err os.Error) {
-	return binary.Write(conn, binary.BigEndian, f)
+func WriteFloat64(writer io.Writer, f float64) (err os.Error) {
+	return binary.Write(writer, binary.BigEndian, f)
 }
 
-func ReadString(conn net.Conn) (s string, err os.Error) {
-	n, e := ReadInt16(conn)
+func ReadString(reader io.Reader) (s string, err os.Error) {
+	n, e := ReadInt16(reader)
 	if e != nil {
 		return "", e
 	}
 
 	bs := make([]byte, uint16(n))
-	_, err = conn.Read(bs)
+	_, err = reader.Read(bs)
 	return string(bs), err
 }
 
-func WriteString(conn net.Conn, s string) (err os.Error) {
+func WriteString(writer io.Writer, s string) (err os.Error) {
 	bs := []byte(s)
 
-	err = WriteInt16(conn, int16(len(bs)))
+	err = WriteInt16(writer, int16(len(bs)))
 	if err != nil {
 		return err
 	}
 
-	_, err = conn.Write(bs)
+	_, err = writer.Write(bs)
 	return err
 }
 
-func ReadHandshake(conn net.Conn) (username string, err os.Error) {
-	packetID, e := ReadByte(conn)
+func ReadHandshake(reader io.Reader) (username string, err os.Error) {
+	packetID, e := ReadByte(reader)
 	if e != nil {
 		return "", e
 	}
@@ -102,20 +102,20 @@ func ReadHandshake(conn net.Conn) (username string, err os.Error) {
 		panic(fmt.Sprintf("ReadHandshake: invalid packet ID %#x", packetID))
 	}
 
-	return ReadString(conn)
+	return ReadString(reader)
 }
 
-func WriteHandshake(conn net.Conn, reply string) (err os.Error) {
-	err = WriteByte(conn, packetIDHandshake)
+func WriteHandshake(writer io.Writer, reply string) (err os.Error) {
+	err = WriteByte(writer, packetIDHandshake)
 	if err != nil {
 		return
 	}
 
-	return WriteString(conn, reply)
+	return WriteString(writer, reply)
 }
 
-func ReadLogin(conn net.Conn) (username, password string, err os.Error) {
-	packetID, e := ReadByte(conn)
+func ReadLogin(reader io.Reader) (username, password string, err os.Error) {
+	packetID, e := ReadByte(reader)
 	if e != nil {
 		return "", "", e
 	}
@@ -123,7 +123,7 @@ func ReadLogin(conn net.Conn) (username, password string, err os.Error) {
 		panic(fmt.Sprintf("ReadLogin: invalid packet ID %#x", packetID))
 	}
 
-	version, e2 := ReadInt32(conn)
+	version, e2 := ReadInt32(reader)
 	if e2 != nil {
 		return "", "", e2
 	}
@@ -131,12 +131,12 @@ func ReadLogin(conn net.Conn) (username, password string, err os.Error) {
 		panic(fmt.Sprintf("ReadLogin: unsupported protocol version %#x", version))
 	}
 
-	username, e3 := ReadString(conn)
+	username, e3 := ReadString(reader)
 	if e3 != nil {
 		return "", "", e3
 	}
 
-	password, e4 := ReadString(conn)
+	password, e4 := ReadString(reader)
 	if e4 != nil {
 		return "", "", e4
 	}
@@ -144,32 +144,32 @@ func ReadLogin(conn net.Conn) (username, password string, err os.Error) {
 	return username, password, nil
 }
 
-func WriteLogin(conn net.Conn) (err os.Error) {
-	_, err = conn.Write([]byte{packetIDLogin, 0, 0, 0, 0, 0, 0, 0, 0})
+func WriteLogin(writer io.Writer) (err os.Error) {
+	_, err = writer.Write([]byte{packetIDLogin, 0, 0, 0, 0, 0, 0, 0, 0})
 	return err
 }
 
-func WriteSpawnPosition(conn net.Conn, position *XYZ) (err os.Error) {
-	err = WriteByte(conn, packetIDSpawnPosition)
+func WriteSpawnPosition(writer io.Writer, position *XYZ) (err os.Error) {
+	err = WriteByte(writer, packetIDSpawnPosition)
 	if err != nil {
 		return
 	}
 
-	err = WriteInt32(conn, int32(position.x))
+	err = WriteInt32(writer, int32(position.x))
 	if err != nil {
 		return
 	}
 
-	err = WriteInt32(conn, int32(position.y))
+	err = WriteInt32(writer, int32(position.y))
 	if err != nil {
 		return
 	}
 
-	err = WriteInt32(conn, int32(position.z))
+	err = WriteInt32(writer, int32(position.z))
 	return
 }
 
-func WritePlayerInventory(conn net.Conn) (err os.Error) {
+func WritePlayerInventory(writer io.Writer) (err os.Error) {
 	type InventoryType struct {
 		inventoryType int32
 		count         int16
@@ -181,23 +181,23 @@ func WritePlayerInventory(conn net.Conn) (err os.Error) {
 	}
 
 	for _, inventory := range inventories {
-		err = WriteByte(conn, packetIDPlayerInventory)
+		err = WriteByte(writer, packetIDPlayerInventory)
 		if err != nil {
 			return
 		}
 
-		err = WriteInt32(conn, inventory.inventoryType)
+		err = WriteInt32(writer, inventory.inventoryType)
 		if err != nil {
 			return
 		}
 
-		err = WriteInt16(conn, inventory.count)
+		err = WriteInt16(writer, inventory.count)
 		if err != nil {
 			return
 		}
 
 		for i := int16(0); i < inventory.count; i++ {
-			err = WriteInt16(conn, -1)
+			err = WriteInt16(writer, -1)
 			if err != nil {
 				return
 			}
@@ -206,42 +206,42 @@ func WritePlayerInventory(conn net.Conn) (err os.Error) {
 	return
 }
 
-func WritePlayerPositionLook(conn net.Conn, position *XYZ, orientation *Orientation, stance float64, flying bool) (err os.Error) {
-	err = WriteByte(conn, packetIDPlayerPositionLook)
+func WritePlayerPositionLook(writer io.Writer, position *XYZ, orientation *Orientation, stance float64, flying bool) (err os.Error) {
+	err = WriteByte(writer, packetIDPlayerPositionLook)
 	if err != nil {
 		return
 	}
 
-	err = WriteFloat64(conn, position.x)
+	err = WriteFloat64(writer, position.x)
 	if err != nil {
 		return
 	}
 
-	err = WriteFloat64(conn, position.y)
+	err = WriteFloat64(writer, position.y)
 	if err != nil {
 		return
 	}
 
-	err = WriteFloat64(conn, stance)
+	err = WriteFloat64(writer, stance)
 	if err != nil {
 		return
 	}
 
-	err = WriteFloat64(conn, position.z)
+	err = WriteFloat64(writer, position.z)
 	if err != nil {
 		return
 	}
 
-	err = WriteFloat32(conn, orientation.rotation)
+	err = WriteFloat32(writer, orientation.rotation)
 	if err != nil {
 		return
 	}
 
-	err = WriteFloat32(conn, orientation.pitch)
+	err = WriteFloat32(writer, orientation.pitch)
 	if err != nil {
 		return
 	}
 
-	err = WriteBool(conn, flying)
+	err = WriteBool(writer, flying)
 	return
 }
