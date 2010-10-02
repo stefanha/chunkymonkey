@@ -7,6 +7,7 @@ LD += -L nbt/_obj
 TARG=mcs
 GOFILES=\
 	mcs.go \
-	proto.go
+	proto.go \
+	chunk.go
 
 include $(GOROOT)/src/Make.cmd
