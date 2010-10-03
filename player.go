@@ -34,6 +34,10 @@ func StartPlayer(game *Game, conn net.Conn) {
 	game.Enqueue(func(*Game) { player.postLogin() })
 }
 
+func (player *Player) PacketFlying(flying bool) {
+	log.Stderrf("PacketFlying flying=%v", flying)
+}
+
 func (player *Player) PacketPlayerPosition(position *XYZ, stance float64, flying bool) {
 	log.Stderrf("PacketPlayerPosition position=(%.2f, %.2f, %.2f) stance=%.2f flying=%v",
 		position.x, position.y, position.z, stance, flying)

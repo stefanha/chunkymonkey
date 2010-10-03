@@ -17,6 +17,7 @@ const (
 	packetIDHandshake          = 0x2
 	packetIDPlayerInventory    = 0x5
 	packetIDSpawnPosition      = 0x6
+	packetIDFlying             = 0xa
 	packetIDPlayerPosition     = 0xb
 	packetIDPlayerLook         = 0xc
 	packetIDPlayerPositionLook = 0xd
@@ -31,6 +32,7 @@ const (
 
 // Callers must implement this interface to receive packets
 type PacketHandler interface {
+	PacketFlying(flying bool)
 	PacketPlayerPosition(position *XYZ, stance float64, flying bool)
 	PacketPlayerLook(orientation *Orientation, flying bool)
 }
@@ -255,6 +257,20 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 	return
 }
 
+func ReadFlying(reader io.Reader, handler PacketHandler) (err os.Error) {
+	var packet struct {
+		Flying byte
+	}
+
+	err = binary.Read(reader, binary.BigEndian, &packet)
+	if err != nil {
+		return
+	}
+
+	handler.PacketFlying(byteToBool(packet.Flying))
+	return
+}
+
 func ReadPlayerPosition(reader io.Reader, handler PacketHandler) (err os.Error) {
 	var packet struct {
 		X float64
@@ -312,6 +328,7 @@ func ReadPlayerPositionLook(reader io.Reader, handler PacketHandler) (err os.Err
 
 // Packet reader functions
 var readFns = map[byte]func(io.Reader, PacketHandler) os.Error {
+	packetIDFlying: ReadFlying,
 	packetIDPlayerPosition: ReadPlayerPosition,
 	packetIDPlayerLook: ReadPlayerLook,
 	packetIDPlayerPositionLook: ReadPlayerPositionLook,
