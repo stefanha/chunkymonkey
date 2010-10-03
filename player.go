@@ -52,6 +52,10 @@ func (player *Player) PacketPlayerLook(orientation *Orientation, flying bool) {
 		orientation.rotation, orientation.pitch, flying)
 }
 
+func (player *Player) PacketDisconnect(reason string) {
+	log.Stderrf("PacketDisconnect reason=%s", reason)
+}
+
 func (player *Player) ReceiveLoop() {
 	for {
 		err := ReadPacket(player.conn, player)

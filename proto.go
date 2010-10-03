@@ -24,6 +24,7 @@ const (
 	packetIDPlayerPositionLook = 0xd
 	packetIDPreChunk           = 0x32
 	packetIDMapChunk           = 0x33
+	packetIDDisconnect         = 0xff
 
 	// Inventory types
 	inventoryTypeMain     = -1
@@ -37,6 +38,7 @@ type PacketHandler interface {
 	PacketFlying(flying bool)
 	PacketPlayerPosition(position *XYZ, stance float64, flying bool)
 	PacketPlayerLook(orientation *Orientation, flying bool)
+	PacketDisconnect(reason string)
 }
 
 func boolToByte(b bool) byte {
@@ -333,6 +335,16 @@ func ReadPlayerPositionLook(reader io.Reader, handler PacketHandler) (err os.Err
 	return
 }
 
+func ReadDisconnect(reader io.Reader, handler PacketHandler) (err os.Error) {
+	reason, err := ReadString(reader)
+	if err != nil {
+		return
+	}
+
+	handler.PacketDisconnect(reason)
+	return
+}
+
 // Packet reader functions
 var readFns = map[byte]func(io.Reader, PacketHandler) os.Error {
 	packetIDKeepAlive: ReadKeepAlive,
@@ -340,6 +352,7 @@ var readFns = map[byte]func(io.Reader, PacketHandler) os.Error {
 	packetIDPlayerPosition: ReadPlayerPosition,
 	packetIDPlayerLook: ReadPlayerLook,
 	packetIDPlayerPositionLook: ReadPlayerPositionLook,
+	packetIDDisconnect: ReadDisconnect,
 }
 
 func ReadPacket(reader io.Reader, handler PacketHandler) (err os.Error) {
