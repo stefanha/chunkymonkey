@@ -1,0 +1,36 @@
+  ___
+C(o o)O     C H U N K Y   M O N K E Y
+  (.)   \
+ w====m==|       minecraft server
+        /
+
+Chunky Monkey is a Minecraft Alpha multiplayer server.  It is licensed under
+the MIT open source license, please see the LICENSE file for more information.
+
+Website: http://github.com/stefanha/chunkymonkey
+Contact: Stefan Hajnoczi <stefanha@gmail.com>
+
+Status
+======
+
+Chunky Monkey is currently in early development and does not yet run games.
+
+Requirements
+============
+
+The Go toolchain must be installed.  For more information, see:
+http://golang.org/doc/install.html#fetch
+
+Building
+========
+
+$ cd nbt && make && cd ..
+$ make
+
+Running
+=======
+
+Serve up a single player world:
+
+$ ./chunkymonkey ~/.minecraft/saves/World1
+2010/10/03 16:32:13 Listening on  :25565
