@@ -4,7 +4,9 @@ import (
 	"io"
 	"os"
 	"fmt"
+	"bytes"
 	"encoding/binary"
+	"compress/zlib"
 )
 
 const (
@@ -16,6 +18,8 @@ const (
 	packetIDPlayerInventory    = 0x5
 	packetIDSpawnPosition      = 0x6
 	packetIDPlayerPositionLook = 0xd
+	packetIDPreChunk           = 0x32
+	packetIDMapChunk           = 0x33
 
 	// Inventory types
 	inventoryTypeMain     = -1
@@ -77,7 +81,7 @@ func ReadString(reader io.Reader) (s string, err os.Error) {
 	}
 
 	bs := make([]byte, uint16(n))
-	_, err = reader.Read(bs)
+	_, err = io.ReadFull(reader, bs)
 	return string(bs), err
 }
 
@@ -243,5 +247,83 @@ func WritePlayerPositionLook(writer io.Writer, position *XYZ, orientation *Orien
 	}
 
 	err = WriteBool(writer, flying)
+	return
+}
+
+func WritePreChunk(writer io.Writer, x int32, z int32, willSend bool) (err os.Error) {
+	err = WriteByte(writer, packetIDPreChunk)
+	if err != nil {
+		return
+	}
+
+	err = WriteInt32(writer, x)
+	if err != nil {
+		return
+	}
+
+	err = WriteInt32(writer, z)
+	if err != nil {
+		return
+	}
+
+	err = WriteBool(writer, willSend)
+	return
+}
+
+func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
+	err = WriteByte(writer, packetIDMapChunk)
+	if err != nil {
+		return
+	}
+
+	err = WriteInt32(writer, chunk.x)
+	if err != nil {
+		return
+	}
+
+	err = WriteInt16(writer, 0)
+	if err != nil {
+		return
+	}
+
+	err = WriteInt32(writer, chunk.z)
+	if err != nil {
+		return
+	}
+
+	err = WriteByte(writer, byte(ChunkSizeX - 1))
+	if err != nil {
+		return
+	}
+
+	err = WriteByte(writer, byte(ChunkSizeY - 1))
+	if err != nil {
+		return
+	}
+
+	err = WriteByte(writer, byte(ChunkSizeZ - 1))
+	if err != nil {
+		return
+	}
+
+	buf := &bytes.Buffer{}
+	compressed, err := zlib.NewWriter(buf)
+	if err != nil {
+		return
+	}
+
+	compressed.Write(chunk.blocks)
+	compressed.Write(chunk.blockData)
+	compressed.Write(chunk.blockLight)
+	compressed.Write(chunk.skyLight)
+	compressed.Close()
+	bs := buf.Bytes()
+
+	err = WriteInt32(writer, int32(len(bs)))
+	if err != nil {
+		return
+	}
+
+	_, err = writer.Write(bs)
 	return
 }

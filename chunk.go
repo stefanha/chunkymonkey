@@ -8,6 +8,12 @@ import (
 	"nbt"
 )
 
+const (
+	ChunkSizeX = 16
+	ChunkSizeY = 128
+	ChunkSizeZ = 16
+)
+
 type Chunk struct {
 	x, z       int32
 	blocks     []byte

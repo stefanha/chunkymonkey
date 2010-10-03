@@ -1,9 +1,14 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net"
 	"bytes"
+)
+
+const (
+	chunkRadius = 1
 )
 
 type Player struct {
@@ -23,15 +28,10 @@ func StartPlayer(game *Game, conn net.Conn) {
 		txQueue:     make(chan []byte, 128),
 	}
 
-	buf := &bytes.Buffer{}
-	WriteSpawnPosition(buf, &player.position)
-	WritePlayerInventory(buf)
-	WritePlayerPositionLook(buf, &player.position, &player.orientation,
-		0, false)
-	player.txQueue <- buf.Bytes()
-
 	go player.ReceiveLoop()
 	go player.TransmitLoop()
+
+	game.Enqueue(func(*Game) { player.postLogin() })
 }
 
 func (player *Player) ReceiveLoop() {
@@ -47,4 +47,33 @@ func (player *Player) TransmitLoop() {
 			return
 		}
 	}
+}
+
+func (player *Player) sendChunks(writer io.Writer) {
+	playerX := int32(player.position.x) / ChunkSizeX
+	playerZ := int32(player.position.z) / ChunkSizeZ
+
+	for z := playerZ - chunkRadius; z < playerZ + chunkRadius; z++ {
+		for x := playerX - chunkRadius; x < playerX + chunkRadius; x++ {
+			WritePreChunk(writer, x, z, true)
+		}
+	}
+
+	for z := playerZ - chunkRadius; z < playerZ + chunkRadius; z++ {
+		for x := playerX - chunkRadius; x < playerX + chunkRadius; x++ {
+			log.Stderr("sendChunks x=", x, " z=", z)
+			chunk := player.game.chunkManager.Get(x, z)
+			WriteMapChunk(writer, chunk)
+		}
+	}
+}
+
+func (player *Player) postLogin() {
+	buf := &bytes.Buffer{}
+	WriteSpawnPosition(buf, &player.position)
+	player.sendChunks(buf)
+	WritePlayerInventory(buf)
+	WritePlayerPositionLook(buf, &player.position, &player.orientation,
+		0, false)
+	player.txQueue <- buf.Bytes()
 }
