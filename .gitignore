@@ -1,2 +1,4 @@
 *.6
-mcs
+*.a
+_obj
+chunkymonkey

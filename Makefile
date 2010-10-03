@@ -4,9 +4,9 @@ include $(GOROOT)/src/Make.inc
 GC += -I nbt/_obj
 LD += -L nbt/_obj
 
-TARG=mcs
+TARG=chunkymonkey
 GOFILES=\
-	mcs.go \
+	chunkymonkey.go \
 	proto.go \
 	chunk.go \
 	game.go \
