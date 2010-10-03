@@ -17,6 +17,8 @@ const (
 	packetIDHandshake          = 0x2
 	packetIDPlayerInventory    = 0x5
 	packetIDSpawnPosition      = 0x6
+	packetIDPlayerPosition     = 0xb
+	packetIDPlayerLook         = 0xc
 	packetIDPlayerPositionLook = 0xd
 	packetIDPreChunk           = 0x32
 	packetIDMapChunk           = 0x33
@@ -26,6 +28,12 @@ const (
 	inventoryTypeArmor    = -2
 	inventoryTypeCrafting = -3
 )
+
+// Callers must implement this interface to receive packets
+type PacketHandler interface {
+	PacketPlayerPosition(position *XYZ, stance float64, flying bool)
+	PacketPlayerLook(orientation *Orientation, flying bool)
+}
 
 func boolToByte(b bool) byte {
 	if b {
@@ -244,5 +252,80 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 	}
 
 	err = binary.Write(writer, binary.BigEndian, &packet)
+	return
+}
+
+func ReadPlayerPosition(reader io.Reader, handler PacketHandler) (err os.Error) {
+	var packet struct {
+		X float64
+		Y float64
+		Stance float64
+		Z float64
+		Flying byte
+	}
+
+	err = binary.Read(reader, binary.BigEndian, &packet)
+	if err != nil {
+		return
+	}
+
+	handler.PacketPlayerPosition(&XYZ{packet.X, packet.Y, packet.Z}, packet.Stance, byteToBool(packet.Flying))
+	return
+}
+
+func ReadPlayerLook(reader io.Reader, handler PacketHandler) (err os.Error) {
+	var packet struct {
+		Rotation float32
+		Pitch float32
+		Flying byte
+	}
+
+	err = binary.Read(reader, binary.BigEndian, &packet)
+	if err != nil {
+		return
+	}
+
+	handler.PacketPlayerLook(&Orientation{packet.Rotation, packet.Pitch}, byteToBool(packet.Flying))
+	return
+}
+
+func ReadPlayerPositionLook(reader io.Reader, handler PacketHandler) (err os.Error) {
+	var packet struct {
+		X float64
+		Y float64
+		Stance float64
+		Z float64
+		Rotation float32
+		Pitch float32
+		Flying byte
+	}
+
+	err = binary.Read(reader, binary.BigEndian, &packet)
+	if err != nil {
+		return
+	}
+
+	handler.PacketPlayerPosition(&XYZ{packet.X, packet.Y, packet.Z}, packet.Stance, byteToBool(packet.Flying))
+	handler.PacketPlayerLook(&Orientation{packet.Rotation, packet.Pitch}, byteToBool(packet.Flying))
+	return
+}
+
+// Packet reader functions
+var readFns = map[byte]func(io.Reader, PacketHandler) os.Error {
+	packetIDPlayerPosition: ReadPlayerPosition,
+	packetIDPlayerLook: ReadPlayerLook,
+	packetIDPlayerPositionLook: ReadPlayerPositionLook,
+}
+
+func ReadPacket(reader io.Reader, handler PacketHandler) (err os.Error) {
+	var packetID byte
+
+	err = binary.Read(reader, binary.BigEndian, &packetID)
+	fn, ok := readFns[packetID]
+	if !ok {
+		return os.NewError(fmt.Sprintf("unhandled packet type %#x", packetID))
+	}
+
+	err = fn(reader, handler)
 	return
 }

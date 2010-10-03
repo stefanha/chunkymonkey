@@ -34,8 +34,24 @@ func StartPlayer(game *Game, conn net.Conn) {
 	game.Enqueue(func(*Game) { player.postLogin() })
 }
 
+func (player *Player) PacketPlayerPosition(position *XYZ, stance float64, flying bool) {
+	log.Stderrf("PacketPlayerPosition position=(%.2f, %.2f, %.2f) stance=%.2f flying=%v",
+		position.x, position.y, position.z, stance, flying)
+}
+
+func (player *Player) PacketPlayerLook(orientation *Orientation, flying bool) {
+	log.Stderrf("PacketPlayerLook orientation=(%.2f, %.2f) flying=%v",
+		orientation.rotation, orientation.pitch, flying)
+}
+
 func (player *Player) ReceiveLoop() {
-	// TODO
+	for {
+		err := ReadPacket(player.conn, player)
+		if err != nil {
+			log.Stderr("ReceiveLoop failed: ", err.String())
+			return
+		}
+	}
 }
 
 func (player *Player) TransmitLoop() {
@@ -61,7 +77,6 @@ func (player *Player) sendChunks(writer io.Writer) {
 
 	for z := playerZ - chunkRadius; z < playerZ + chunkRadius; z++ {
 		for x := playerX - chunkRadius; x < playerX + chunkRadius; x++ {
-			log.Stderr("sendChunks x=", x, " z=", z)
 			chunk := player.game.chunkManager.Get(x, z)
 			WriteMapChunk(writer, chunk)
 		}
