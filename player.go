@@ -31,7 +31,10 @@ func StartPlayer(game *Game, conn net.Conn) {
 	go player.ReceiveLoop()
 	go player.TransmitLoop()
 
-	game.Enqueue(func(*Game) { player.postLogin() })
+	game.Enqueue(func(game *Game) {
+		game.AddPlayer(player)
+		player.postLogin()
+	})
 }
 
 func (player *Player) PacketKeepAlive() {
@@ -54,6 +57,7 @@ func (player *Player) PacketPlayerLook(orientation *Orientation, flying bool) {
 
 func (player *Player) PacketDisconnect(reason string) {
 	log.Stderrf("PacketDisconnect reason=%s", reason)
+	player.game.RemovePlayer(player)
 }
 
 func (player *Player) ReceiveLoop() {
@@ -102,5 +106,11 @@ func (player *Player) postLogin() {
 	WritePlayerInventory(buf)
 	WritePlayerPositionLook(buf, &player.position, &player.orientation,
 		0, false)
+	player.txQueue <- buf.Bytes()
+}
+
+func (player *Player) SendTimeUpdate(time int64) {
+	buf := &bytes.Buffer{}
+	WriteTimeUpdate(buf, time)
 	player.txQueue <- buf.Bytes()
 }

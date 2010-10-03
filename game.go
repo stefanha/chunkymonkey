@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"time"
 )
 
 type XYZ struct {
@@ -17,6 +18,8 @@ type Orientation struct {
 type Game struct {
 	chunkManager *ChunkManager
 	mainQueue    chan func(*Game)
+	player       *Player
+	time         int64
 }
 
 func (game *Game) Login(conn net.Conn) {
@@ -57,7 +60,12 @@ func (game *Game) Serve(addr string) {
 }
 
 func (game *Game) AddPlayer(player *Player) {
-	// TODO
+	// Trivial implementation for now, need to track multiple players in the future
+	game.player = player
+}
+
+func (game *Game) RemovePlayer(player *Player) {
+	game.player = nil
 }
 
 func (game *Game) Enqueue(f func(*Game)) {
@@ -71,6 +79,22 @@ func (game *Game) mainLoop() {
 	}
 }
 
+func (game *Game) timer() {
+	ticker := time.NewTicker(1000000000) // 1 sec
+	for {
+		<-ticker.C
+		game.Enqueue(func(game *Game) { game.tick() })
+	}
+}
+
+func (game *Game) tick() {
+	game.time += 20
+
+	if game.player != nil {
+		game.player.SendTimeUpdate(game.time)
+	}
+}
+
 func NewGame(chunkManager *ChunkManager) (game *Game) {
 	game = &Game{
 		chunkManager: chunkManager,
@@ -78,5 +102,6 @@ func NewGame(chunkManager *ChunkManager) (game *Game) {
 	}
 
 	go game.mainLoop()
+	go game.timer()
 	return
 }

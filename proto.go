@@ -16,6 +16,7 @@ const (
 	packetIDKeepAlive          = 0x0
 	packetIDLogin              = 0x1
 	packetIDHandshake          = 0x2
+	packetIDTimeUpdate         = 0x4
 	packetIDPlayerInventory    = 0x5
 	packetIDSpawnPosition      = 0x6
 	packetIDFlying             = 0xa
@@ -141,6 +142,19 @@ func WriteSpawnPosition(writer io.Writer, position *XYZ) (err os.Error) {
 		int32(position.y),
 		int32(position.z),
 	}
+	err = binary.Write(writer, binary.BigEndian, &packet)
+	return
+}
+
+func WriteTimeUpdate(writer io.Writer, time int64) (err os.Error) {
+	var packet = struct {
+		PacketID byte
+		Time int64
+	}{
+		packetIDTimeUpdate,
+		time,
+	}
+
 	err = binary.Write(writer, binary.BigEndian, &packet)
 	return
 }
