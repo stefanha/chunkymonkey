@@ -38,7 +38,6 @@ func StartPlayer(game *Game, conn net.Conn) {
 }
 
 func (player *Player) PacketKeepAlive() {
-	log.Stderrf("PacketKeepAlive")
 }
 
 func (player *Player) PacketChatMessage(message string) {
@@ -46,7 +45,6 @@ func (player *Player) PacketChatMessage(message string) {
 }
 
 func (player *Player) PacketFlying(flying bool) {
-	log.Stderrf("PacketFlying flying=%v", flying)
 }
 
 func (player *Player) PacketPlayerPosition(position *XYZ, stance float64, flying bool) {
