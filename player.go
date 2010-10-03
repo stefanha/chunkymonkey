@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	chunkRadius = 1
+	chunkRadius = 10
 )
 
 type Player struct {
@@ -23,7 +23,7 @@ func StartPlayer(game *Game, conn net.Conn) {
 	player := &Player{
 		game:        game,
 		conn:        conn,
-		position:    XYZ{0, 64, 0},
+		position:    XYZ{-147, 73, 0},
 		orientation: Orientation{0, 0},
 		txQueue:     make(chan []byte, 128),
 	}
