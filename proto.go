@@ -195,6 +195,26 @@ func WritePlayerInventory(writer io.Writer) (err os.Error) {
 	return
 }
 
+func WritePlayerPosition(writer io.Writer, position *XYZ, stance float64, flying bool) (err os.Error) {
+	var packet = struct {
+		PacketID byte
+		X float64
+		Y float64
+		Stance float64
+		Z float64
+		Flying byte
+	}{
+		packetIDPlayerPosition,
+		position.x,
+		position.y,
+		stance,
+		position.z,
+		boolToByte(flying),
+	}
+	err = binary.Write(writer, binary.BigEndian, &packet)
+	return
+}
+
 func WritePlayerPositionLook(writer io.Writer, position *XYZ, orientation *Orientation, stance float64, flying bool) (err os.Error) {
 	var packet = struct {
 		PacketID byte
