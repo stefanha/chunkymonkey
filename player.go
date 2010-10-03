@@ -112,6 +112,5 @@ func (player *Player) postLogin() {
 func (player *Player) SendTimeUpdate(time int64) {
 	buf := &bytes.Buffer{}
 	WriteTimeUpdate(buf, time)
-	WritePlayerPosition(buf, &player.position, 0, false)
 	player.txQueue <- buf.Bytes()
 }
