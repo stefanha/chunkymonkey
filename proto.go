@@ -16,6 +16,7 @@ const (
 	packetIDKeepAlive          = 0x0
 	packetIDLogin              = 0x1
 	packetIDHandshake          = 0x2
+	packetIDChatMessage        = 0x3
 	packetIDTimeUpdate         = 0x4
 	packetIDPlayerInventory    = 0x5
 	packetIDSpawnPosition      = 0x6
@@ -38,6 +39,7 @@ const (
 // Callers must implement this interface to receive packets
 type PacketHandler interface {
 	PacketKeepAlive()
+	PacketChatMessage(message string)
 	PacketFlying(flying bool)
 	PacketPlayerPosition(position *XYZ, stance float64, flying bool)
 	PacketPlayerLook(orientation *Orientation, flying bool)
@@ -306,6 +308,25 @@ func ReadKeepAlive(reader io.Reader, handler PacketHandler) (err os.Error) {
 	return
 }
 
+func ReadChatMessage(reader io.Reader, handler PacketHandler) (err os.Error) {
+	var length int16
+	err = binary.Read(reader, binary.BigEndian, &length)
+	if err != nil {
+		return
+	}
+
+	bs := make([]byte, length)
+	_, err = io.ReadFull(reader, bs)
+	if err != nil {
+		return
+	}
+
+	// TODO sanitize chat message
+
+	handler.PacketChatMessage(string(bs))
+	return
+}
+
 func ReadFlying(reader io.Reader, handler PacketHandler) (err os.Error) {
 	var packet struct {
 		Flying byte
@@ -424,6 +445,7 @@ func ReadDisconnect(reader io.Reader, handler PacketHandler) (err os.Error) {
 // Packet reader functions
 var readFns = map[byte]func(io.Reader, PacketHandler) os.Error {
 	packetIDKeepAlive: ReadKeepAlive,
+	packetIDChatMessage: ReadChatMessage,
 	packetIDFlying: ReadFlying,
 	packetIDPlayerPosition: ReadPlayerPosition,
 	packetIDPlayerLook: ReadPlayerLook,

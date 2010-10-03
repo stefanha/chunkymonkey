@@ -41,6 +41,10 @@ func (player *Player) PacketKeepAlive() {
 	log.Stderrf("PacketKeepAlive")
 }
 
+func (player *Player) PacketChatMessage(message string) {
+	log.Stderrf("PacketChatMessage message=%s", message)
+}
+
 func (player *Player) PacketFlying(flying bool) {
 	log.Stderrf("PacketFlying flying=%v", flying)
 }
