@@ -278,7 +278,6 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 		SizeY byte
 		SizeZ byte
 		CompressedLength int32
-		Compressed []byte
 	}{
 		packetIDMapChunk,
 		chunk.x * ChunkSizeX,
@@ -288,10 +287,13 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 		ChunkSizeY - 1,
 		ChunkSizeZ - 1,
 		int32(len(bs)),
-		bs,
 	}
 
 	err = binary.Write(writer, binary.BigEndian, &packet)
+	if err != nil {
+		return
+	}
+	err = binary.Write(writer, binary.BigEndian, bs)
 	return
 }
 

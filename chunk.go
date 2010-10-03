@@ -23,6 +23,28 @@ type Chunk struct {
 	heightMap  []byte
 }
 
+// Unused, for debugging if there are issues with NBT chunks
+func fakeChunk(x int32, z int32) (chunk *Chunk) {
+	chunk = &Chunk{
+		x:          x,
+		z:          z,
+		blocks:     make([]byte, ChunkSizeX * ChunkSizeY * ChunkSizeZ),
+		blockData:  make([]byte, ChunkSizeX * ChunkSizeY * ChunkSizeZ / 2),
+		skyLight:   make([]byte, ChunkSizeX * ChunkSizeY * ChunkSizeZ / 2),
+		blockLight: make([]byte, ChunkSizeX * ChunkSizeY * ChunkSizeZ / 2),
+		heightMap:  make([]byte, ChunkSizeX * ChunkSizeZ),
+	}
+
+	for z := 0; z < ChunkSizeZ; z++ {
+		for x := 0; x < ChunkSizeX; x++ {
+			for y := 0; y < ChunkSizeY / 3; y++ {
+				chunk.blocks[y + (z * ChunkSizeY) + (x * ChunkSizeY * ChunkSizeZ)] = 2 // Grass
+			}
+		}
+	}
+	return
+}
+
 func loadChunk(reader io.Reader) (chunk *Chunk, err os.Error) {
 	level, err := nbt.Read(reader)
 	if err != nil {
