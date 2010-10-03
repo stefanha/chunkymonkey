@@ -23,7 +23,7 @@ func StartPlayer(game *Game, conn net.Conn) {
 	player := &Player{
 		game:        game,
 		conn:        conn,
-		position:    XYZ{-147, 73, 0},
+		position:    StartPosition,
 		orientation: Orientation{0, 0},
 		txQueue:     make(chan []byte, 128),
 	}
