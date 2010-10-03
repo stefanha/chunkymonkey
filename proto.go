@@ -27,60 +27,25 @@ const (
 	inventoryTypeCrafting = -3
 )
 
-func ReadByte(reader io.Reader) (b byte, err os.Error) {
-	err = binary.Read(reader, binary.BigEndian, &b)
-	return
-}
-
-func WriteByte(writer io.Writer, b byte) (err os.Error) {
-	return binary.Write(writer, binary.BigEndian, b)
-}
-
-func WriteBool(writer io.Writer, b bool) (err os.Error) {
-	var val byte
-
+func boolToByte(b bool) byte {
 	if b {
-		val = 1
-	} else {
-		val = 0
+		return 1
 	}
-
-	return WriteByte(writer, val)
+	return 0
 }
 
-func ReadInt16(reader io.Reader) (i int16, err os.Error) {
-	err = binary.Read(reader, binary.BigEndian, &i)
-	return
-}
-
-func WriteInt16(writer io.Writer, i int16) (err os.Error) {
-	return binary.Write(writer, binary.BigEndian, i)
-}
-
-func ReadInt32(reader io.Reader) (i int32, err os.Error) {
-	err = binary.Read(reader, binary.BigEndian, &i)
-	return
-}
-
-func WriteInt32(writer io.Writer, i int32) (err os.Error) {
-	return binary.Write(writer, binary.BigEndian, i)
-}
-
-func WriteFloat32(writer io.Writer, f float32) (err os.Error) {
-	return binary.Write(writer, binary.BigEndian, f)
-}
-
-func WriteFloat64(writer io.Writer, f float64) (err os.Error) {
-	return binary.Write(writer, binary.BigEndian, f)
+func byteToBool(b byte) bool {
+	return b != 0
 }
 
 func ReadString(reader io.Reader) (s string, err os.Error) {
-	n, e := ReadInt16(reader)
-	if e != nil {
-		return "", e
+	var length int16
+	err = binary.Read(reader, binary.BigEndian, &length)
+	if err != nil {
+		return
 	}
 
-	bs := make([]byte, uint16(n))
+	bs := make([]byte, uint16(length))
 	_, err = io.ReadFull(reader, bs)
 	return string(bs), err
 }
@@ -88,19 +53,20 @@ func ReadString(reader io.Reader) (s string, err os.Error) {
 func WriteString(writer io.Writer, s string) (err os.Error) {
 	bs := []byte(s)
 
-	err = WriteInt16(writer, int16(len(bs)))
+	err = binary.Write(writer, binary.BigEndian, int16(len(bs)))
 	if err != nil {
-		return err
+		return
 	}
 
 	_, err = writer.Write(bs)
-	return err
+	return
 }
 
 func ReadHandshake(reader io.Reader) (username string, err os.Error) {
-	packetID, e := ReadByte(reader)
-	if e != nil {
-		return "", e
+	var packetID byte
+	err = binary.Read(reader, binary.BigEndian, &packetID)
+	if err != nil {
+		return
 	}
 	if packetID != packetIDHandshake {
 		panic(fmt.Sprintf("ReadHandshake: invalid packet ID %#x", packetID))
@@ -110,7 +76,7 @@ func ReadHandshake(reader io.Reader) (username string, err os.Error) {
 }
 
 func WriteHandshake(writer io.Writer, reply string) (err os.Error) {
-	err = WriteByte(writer, packetIDHandshake)
+	err = binary.Write(writer, binary.BigEndian, byte(packetIDHandshake))
 	if err != nil {
 		return
 	}
@@ -119,33 +85,29 @@ func WriteHandshake(writer io.Writer, reply string) (err os.Error) {
 }
 
 func ReadLogin(reader io.Reader) (username, password string, err os.Error) {
-	packetID, e := ReadByte(reader)
-	if e != nil {
-		return "", "", e
-	}
-	if packetID != packetIDLogin {
-		panic(fmt.Sprintf("ReadLogin: invalid packet ID %#x", packetID))
+	var packet struct {
+		PacketID byte
+		Version int32
 	}
 
-	version, e2 := ReadInt32(reader)
-	if e2 != nil {
-		return "", "", e2
+	err = binary.Read(reader, binary.BigEndian, &packet)
+	if err != nil {
+		return
 	}
-	if version != protocolVersion {
-		panic(fmt.Sprintf("ReadLogin: unsupported protocol version %#x", version))
+	if packet.PacketID != packetIDLogin {
+		panic(fmt.Sprintf("ReadLogin: invalid packet ID %#x", packet.PacketID))
 	}
-
-	username, e3 := ReadString(reader)
-	if e3 != nil {
-		return "", "", e3
+	if packet.Version != protocolVersion {
+		panic(fmt.Sprintf("ReadLogin: unsupported protocol version %#x", packet.Version))
 	}
 
-	password, e4 := ReadString(reader)
-	if e4 != nil {
-		return "", "", e4
+	username, err = ReadString(reader)
+	if err != nil {
+		return
 	}
 
-	return username, password, nil
+	password, err = ReadString(reader)
+	return
 }
 
 func WriteLogin(writer io.Writer) (err os.Error) {
@@ -154,22 +116,18 @@ func WriteLogin(writer io.Writer) (err os.Error) {
 }
 
 func WriteSpawnPosition(writer io.Writer, position *XYZ) (err os.Error) {
-	err = WriteByte(writer, packetIDSpawnPosition)
-	if err != nil {
-		return
+	var packet = struct {
+		PacketID byte
+		X int32
+		Y int32
+		Z int32
+	}{
+		packetIDSpawnPosition,
+		int32(position.x),
+		int32(position.y),
+		int32(position.z),
 	}
-
-	err = WriteInt32(writer, int32(position.x))
-	if err != nil {
-		return
-	}
-
-	err = WriteInt32(writer, int32(position.y))
-	if err != nil {
-		return
-	}
-
-	err = WriteInt32(writer, int32(position.z))
+	err = binary.Write(writer, binary.BigEndian, &packet)
 	return
 }
 
@@ -185,23 +143,22 @@ func WritePlayerInventory(writer io.Writer) (err os.Error) {
 	}
 
 	for _, inventory := range inventories {
-		err = WriteByte(writer, packetIDPlayerInventory)
-		if err != nil {
-			return
+		var packet = struct {
+			PacketID byte
+			InventoryType int32
+			Count int16
+		}{
+			packetIDPlayerInventory,
+			inventory.inventoryType,
+			inventory.count,
 		}
-
-		err = WriteInt32(writer, inventory.inventoryType)
-		if err != nil {
-			return
-		}
-
-		err = WriteInt16(writer, inventory.count)
+		err = binary.Write(writer, binary.BigEndian, &packet)
 		if err != nil {
 			return
 		}
 
 		for i := int16(0); i < inventory.count; i++ {
-			err = WriteInt16(writer, -1)
+			err = binary.Write(writer, binary.BigEndian, int16(-1))
 			if err != nil {
 				return
 			}
@@ -211,101 +168,46 @@ func WritePlayerInventory(writer io.Writer) (err os.Error) {
 }
 
 func WritePlayerPositionLook(writer io.Writer, position *XYZ, orientation *Orientation, stance float64, flying bool) (err os.Error) {
-	err = WriteByte(writer, packetIDPlayerPositionLook)
-	if err != nil {
-		return
+	var packet = struct {
+		PacketID byte
+		X float64
+		Y float64
+		Stance float64
+		Z float64
+		Rotation float32
+		Pitch float32
+		Flying byte
+	}{
+		packetIDPlayerPositionLook,
+		position.x,
+		position.y,
+		stance,
+		position.z,
+		orientation.rotation,
+		orientation.pitch,
+		boolToByte(flying),
 	}
-
-	err = WriteFloat64(writer, position.x)
-	if err != nil {
-		return
-	}
-
-	err = WriteFloat64(writer, position.y)
-	if err != nil {
-		return
-	}
-
-	err = WriteFloat64(writer, stance)
-	if err != nil {
-		return
-	}
-
-	err = WriteFloat64(writer, position.z)
-	if err != nil {
-		return
-	}
-
-	err = WriteFloat32(writer, orientation.rotation)
-	if err != nil {
-		return
-	}
-
-	err = WriteFloat32(writer, orientation.pitch)
-	if err != nil {
-		return
-	}
-
-	err = WriteBool(writer, flying)
+	err = binary.Write(writer, binary.BigEndian, &packet)
 	return
 }
 
 func WritePreChunk(writer io.Writer, x int32, z int32, willSend bool) (err os.Error) {
-	err = WriteByte(writer, packetIDPreChunk)
-	if err != nil {
-		return
+	var packet = struct {
+		PacketID byte
+		X int32
+		Z int32
+		WillSend byte
+	}{
+		packetIDPreChunk,
+		x,
+		z,
+		boolToByte(willSend),
 	}
-
-	err = WriteInt32(writer, x)
-	if err != nil {
-		return
-	}
-
-	err = WriteInt32(writer, z)
-	if err != nil {
-		return
-	}
-
-	err = WriteBool(writer, willSend)
+	err = binary.Write(writer, binary.BigEndian, &packet)
 	return
 }
 
 func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
-	err = WriteByte(writer, packetIDMapChunk)
-	if err != nil {
-		return
-	}
-
-	err = WriteInt32(writer, chunk.x)
-	if err != nil {
-		return
-	}
-
-	err = WriteInt16(writer, 0)
-	if err != nil {
-		return
-	}
-
-	err = WriteInt32(writer, chunk.z)
-	if err != nil {
-		return
-	}
-
-	err = WriteByte(writer, byte(ChunkSizeX - 1))
-	if err != nil {
-		return
-	}
-
-	err = WriteByte(writer, byte(ChunkSizeY - 1))
-	if err != nil {
-		return
-	}
-
-	err = WriteByte(writer, byte(ChunkSizeZ - 1))
-	if err != nil {
-		return
-	}
-
 	buf := &bytes.Buffer{}
 	compressed, err := zlib.NewWriter(buf)
 	if err != nil {
@@ -319,11 +221,28 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 	compressed.Close()
 	bs := buf.Bytes()
 
-	err = WriteInt32(writer, int32(len(bs)))
-	if err != nil {
-		return
+	var packet = struct {
+		PacketID byte
+		X int32
+		Y int16
+		Z int32
+		SizeX byte
+		SizeY byte
+		SizeZ byte
+		CompressedLength int32
+		Compressed []byte
+	}{
+		packetIDMapChunk,
+		chunk.x,
+		0,
+		chunk.z,
+		ChunkSizeX - 1,
+		ChunkSizeY - 1,
+		ChunkSizeZ - 1,
+		int32(len(bs)),
+		bs,
 	}
 
-	_, err = writer.Write(bs)
+	err = binary.Write(writer, binary.BigEndian, &packet)
 	return
 }
