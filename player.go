@@ -34,6 +34,10 @@ func StartPlayer(game *Game, conn net.Conn) {
 	game.Enqueue(func(*Game) { player.postLogin() })
 }
 
+func (player *Player) PacketKeepAlive() {
+	log.Stderrf("PacketKeepAlive")
+}
+
 func (player *Player) PacketFlying(flying bool) {
 	log.Stderrf("PacketFlying flying=%v", flying)
 }

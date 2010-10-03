@@ -13,6 +13,7 @@ const (
 	protocolVersion = 2
 
 	// Packet type IDs
+	packetIDKeepAlive          = 0x0
 	packetIDLogin              = 0x1
 	packetIDHandshake          = 0x2
 	packetIDPlayerInventory    = 0x5
@@ -32,6 +33,7 @@ const (
 
 // Callers must implement this interface to receive packets
 type PacketHandler interface {
+	PacketKeepAlive()
 	PacketFlying(flying bool)
 	PacketPlayerPosition(position *XYZ, stance float64, flying bool)
 	PacketPlayerLook(orientation *Orientation, flying bool)
@@ -257,6 +259,11 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 	return
 }
 
+func ReadKeepAlive(reader io.Reader, handler PacketHandler) (err os.Error) {
+	handler.PacketKeepAlive()
+	return
+}
+
 func ReadFlying(reader io.Reader, handler PacketHandler) (err os.Error) {
 	var packet struct {
 		Flying byte
@@ -328,6 +335,7 @@ func ReadPlayerPositionLook(reader io.Reader, handler PacketHandler) (err os.Err
 
 // Packet reader functions
 var readFns = map[byte]func(io.Reader, PacketHandler) os.Error {
+	packetIDKeepAlive: ReadKeepAlive,
 	packetIDFlying: ReadFlying,
 	packetIDPlayerPosition: ReadPlayerPosition,
 	packetIDPlayerLook: ReadPlayerLook,
