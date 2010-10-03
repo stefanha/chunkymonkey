@@ -247,9 +247,9 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 		Compressed []byte
 	}{
 		packetIDMapChunk,
-		chunk.x,
+		chunk.x * ChunkSizeX,
 		0,
-		chunk.z,
+		chunk.z * ChunkSizeZ,
 		ChunkSizeX - 1,
 		ChunkSizeY - 1,
 		ChunkSizeZ - 1,
