@@ -55,6 +55,11 @@ func (player *Player) PacketPlayerLook(orientation *Orientation, flying bool) {
 		orientation.rotation, orientation.pitch, flying)
 }
 
+func (player *Player) PacketPlayerDigging(status byte, x int32, y byte, z int32, face byte) {
+	log.Stderrf("PacketPlayerDigging status=%d x=%d y=%d z=%d face=%d",
+		status, x, y, z, face)
+}
+
 func (player *Player) PacketPlayerBlockPlacement(id int16, x int32, y byte, z int32, direction byte) {
 	log.Stderrf("PacketPlayerBlockPlacement id=%d x=%d y=%d z=%d direction=%d",
 		id, x, y, z, direction)

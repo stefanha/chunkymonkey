@@ -23,6 +23,7 @@ const (
 	packetIDPlayerPosition     = 0xb
 	packetIDPlayerLook         = 0xc
 	packetIDPlayerPositionLook = 0xd
+	packetIDPlayerDigging      = 0xe
 	packetIDPlayerBlockPlacement = 0xf
 	packetIDPreChunk           = 0x32
 	packetIDMapChunk           = 0x33
@@ -40,6 +41,7 @@ type PacketHandler interface {
 	PacketFlying(flying bool)
 	PacketPlayerPosition(position *XYZ, stance float64, flying bool)
 	PacketPlayerLook(orientation *Orientation, flying bool)
+	PacketPlayerDigging(status byte, x int32, y byte, z int32, face byte)
 	PacketPlayerBlockPlacement(id int16, x int32, y byte, z int32, direction byte)
 	PacketDisconnect(reason string)
 }
@@ -373,6 +375,24 @@ func ReadPlayerPositionLook(reader io.Reader, handler PacketHandler) (err os.Err
 	return
 }
 
+func ReadPlayerDigging(reader io.Reader, handler PacketHandler) (err os.Error) {
+	var packet struct {
+		Status byte
+		X int32
+		Y byte
+		Z int32
+		Face byte
+	}
+
+	err = binary.Read(reader, binary.BigEndian, &packet)
+	if err != nil {
+		return
+	}
+
+	handler.PacketPlayerDigging(packet.Status, packet.X, packet.Y, packet.Z, packet.Face)
+	return
+}
+
 func ReadPlayerBlockPlacement(reader io.Reader, handler PacketHandler) (err os.Error) {
 	var packet struct {
 		ID int16
@@ -408,6 +428,7 @@ var readFns = map[byte]func(io.Reader, PacketHandler) os.Error {
 	packetIDPlayerPosition: ReadPlayerPosition,
 	packetIDPlayerLook: ReadPlayerLook,
 	packetIDPlayerPositionLook: ReadPlayerPositionLook,
+	packetIDPlayerDigging: ReadPlayerDigging,
 	packetIDPlayerBlockPlacement: ReadPlayerBlockPlacement,
 	packetIDDisconnect: ReadDisconnect,
 }
