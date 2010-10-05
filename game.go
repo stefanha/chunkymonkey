@@ -16,10 +16,11 @@ type Orientation struct {
 }
 
 type Game struct {
-	chunkManager *ChunkManager
-	mainQueue    chan func(*Game)
-	player       *Player
-	time         int64
+	chunkManager  *ChunkManager
+	mainQueue     chan func(*Game)
+	entityManager EntityManager
+	players       map[EntityID]*Player
+	time          int64
 }
 
 func (game *Game) Login(conn net.Conn) {
@@ -60,12 +61,13 @@ func (game *Game) Serve(addr string) {
 }
 
 func (game *Game) AddPlayer(player *Player) {
-	// Trivial implementation for now, need to track multiple players in the future
-	game.player = player
+	game.entityManager.AddEntity(&player.Entity)
+	game.players[player.EntityID] = player
 }
 
 func (game *Game) RemovePlayer(player *Player) {
-	game.player = nil
+	game.players[player.EntityID] = nil, false
+	game.entityManager.RemoveEntity(&player.Entity)
 }
 
 func (game *Game) Enqueue(f func(*Game)) {
@@ -90,8 +92,9 @@ func (game *Game) timer() {
 func (game *Game) tick() {
 	game.time += 20
 
-	if game.player != nil {
-		game.player.SendTimeUpdate(game.time)
+	// TODO a broadcast mechanism for constructing the packet once and enqueuing it to many players
+	for _, player := range game.players {
+		player.SendTimeUpdate(game.time)
 	}
 }
 
@@ -99,6 +102,7 @@ func NewGame(chunkManager *ChunkManager) (game *Game) {
 	game = &Game{
 		chunkManager: chunkManager,
 		mainQueue:    make(chan func(*Game), 256),
+		players:      make(map[EntityID]*Player),
 	}
 
 	go game.mainLoop()

@@ -12,6 +12,7 @@ const (
 )
 
 type Player struct {
+	Entity
 	game         *Game
 	conn         net.Conn
 	position     XYZ
@@ -69,7 +70,7 @@ func (player *Player) PacketPlayerBlockPlacement(id int16, x int32, y byte, z in
 
 func (player *Player) PacketDisconnect(reason string) {
 	log.Stderrf("PacketDisconnect reason=%s", reason)
-	player.game.RemovePlayer(player)
+	player.game.Enqueue(func(game *Game) { game.RemovePlayer(player) })
 }
 
 func (player *Player) ReceiveLoop() {
