@@ -28,6 +28,8 @@ const (
 	packetIDPlayerBlockPlacement = 0xf
 	packetIDHoldingChange      = 0x10
 	packetIDArmAnimation       = 0x12
+	packetIDNamedEntitySpawn   = 0x14
+	packetIDDestroyEntity      = 0x1d
 	packetIDPreChunk           = 0x32
 	packetIDMapChunk           = 0x33
 	packetIDDisconnect         = 0xff
@@ -304,6 +306,58 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 		return
 	}
 	err = binary.Write(writer, binary.BigEndian, bs)
+	return
+}
+
+func WriteNamedEntitySpawn(writer io.Writer, entityID EntityID, name string, position *XYZ, orientation *Orientation, currentItem int16) (err os.Error) {
+	var packetStart = struct {
+		PacketID byte
+		EntityID int32
+	}{
+		packetIDNamedEntitySpawn,
+		int32(entityID),
+	}
+
+	err = binary.Write(writer, binary.BigEndian, &packetStart)
+	if err != nil {
+		return
+	}
+
+	err = WriteString(writer, name)
+	if err != nil {
+		return
+	}
+
+	var packetFinish = struct {
+		X int32
+		Y int32
+		Z int32
+		Rotation byte
+		Pitch byte
+		CurrentItem int16
+	}{
+		int32(position.x * PixelsPerBlock),
+		int32(position.y * PixelsPerBlock),
+		int32(position.z * PixelsPerBlock),
+		byte(orientation.rotation),
+		byte(orientation.pitch),
+		currentItem,
+	}
+
+	err = binary.Write(writer, binary.BigEndian, &packetFinish)
+	return
+}
+
+func WriteDestroyEntity(writer io.Writer, entityID EntityID) (err os.Error) {
+	var packet = struct {
+		PacketID byte
+		EntityID int32
+	}{
+		packetIDDestroyEntity,
+		int32(entityID),
+	}
+
+	err = binary.Write(writer, binary.BigEndian, &packet)
 	return
 }
 

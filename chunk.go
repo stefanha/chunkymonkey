@@ -12,6 +12,8 @@ const (
 	ChunkSizeX = 16
 	ChunkSizeY = 128
 	ChunkSizeZ = 16
+
+	PixelsPerBlock = 32
 )
 
 type Chunk struct {

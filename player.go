@@ -18,6 +18,7 @@ type Player struct {
 	name         string
 	position     XYZ
 	orientation  Orientation
+	currentItem  int16
 	txQueue      chan []byte
 }
 
