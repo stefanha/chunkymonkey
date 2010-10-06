@@ -120,6 +120,10 @@ func (player *Player) sendChunks(writer io.Writer) {
 	}
 }
 
+func (player *Player) TransmitPacket(packet []byte) {
+	player.txQueue <- packet
+}
+
 func (player *Player) postLogin() {
 	buf := &bytes.Buffer{}
 	WriteSpawnPosition(buf, &player.position)
@@ -127,11 +131,5 @@ func (player *Player) postLogin() {
 	WritePlayerInventory(buf)
 	WritePlayerPositionLook(buf, &player.position, &player.orientation,
 		0, false)
-	player.txQueue <- buf.Bytes()
-}
-
-func (player *Player) SendTimeUpdate(time int64) {
-	buf := &bytes.Buffer{}
-	WriteTimeUpdate(buf, time)
-	player.txQueue <- buf.Bytes()
+	player.TransmitPacket(buf.Bytes())
 }

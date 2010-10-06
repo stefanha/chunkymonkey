@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"net"
 	"time"
@@ -70,6 +71,16 @@ func (game *Game) RemovePlayer(player *Player) {
 	game.entityManager.RemoveEntity(&player.Entity)
 }
 
+func (game *Game) MulticastPacket(packet []byte, except *Player) {
+	for _, player := range game.players {
+		if player == except {
+			continue
+		}
+
+		player.TransmitPacket(packet)
+	}
+}
+
 func (game *Game) Enqueue(f func(*Game)) {
 	game.mainQueue <- f
 }
@@ -89,13 +100,15 @@ func (game *Game) timer() {
 	}
 }
 
+func (game *Game) sendTimeUpdate() {
+	buf := &bytes.Buffer{}
+	WriteTimeUpdate(buf, game.time)
+	game.MulticastPacket(buf.Bytes(), nil)
+}
+
 func (game *Game) tick() {
 	game.time += 20
-
-	// TODO a broadcast mechanism for constructing the packet once and enqueuing it to many players
-	for _, player := range game.players {
-		player.SendTimeUpdate(game.time)
-	}
+	game.sendTimeUpdate()
 }
 
 func NewGame(chunkManager *ChunkManager) (game *Game) {
