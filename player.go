@@ -68,6 +68,10 @@ func (player *Player) PacketPlayerBlockPlacement(id int16, x int32, y byte, z in
 		id, x, y, z, direction)
 }
 
+func (player *Player) PacketArmAnimation(forward bool) {
+	log.Stderrf("PacketArmAnimation forward=%v", forward)
+}
+
 func (player *Player) PacketDisconnect(reason string) {
 	log.Stderrf("PacketDisconnect reason=%s", reason)
 	player.game.Enqueue(func(game *Game) { game.RemovePlayer(player) })
