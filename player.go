@@ -63,9 +63,13 @@ func (player *Player) PacketPlayerDigging(status byte, x int32, y byte, z int32,
 		status, x, y, z, face)
 }
 
-func (player *Player) PacketPlayerBlockPlacement(id int16, x int32, y byte, z int32, direction byte) {
-	log.Stderrf("PacketPlayerBlockPlacement id=%d x=%d y=%d z=%d direction=%d",
-		id, x, y, z, direction)
+func (player *Player) PacketPlayerBlockPlacement(blockItemID int16, x int32, y byte, z int32, direction byte) {
+	log.Stderrf("PacketPlayerBlockPlacement blockItemID=%d x=%d y=%d z=%d direction=%d",
+		blockItemID, x, y, z, direction)
+}
+
+func (player *Player) PacketHoldingChange(blockItemID int16) {
+	log.Stderrf("PacketHoldingChange blockItemID=%d", blockItemID)
 }
 
 func (player *Player) PacketArmAnimation(forward bool) {
