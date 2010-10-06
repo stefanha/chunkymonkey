@@ -15,15 +15,17 @@ type Player struct {
 	Entity
 	game         *Game
 	conn         net.Conn
+	name         string
 	position     XYZ
 	orientation  Orientation
 	txQueue      chan []byte
 }
 
-func StartPlayer(game *Game, conn net.Conn) {
+func StartPlayer(game *Game, conn net.Conn, name string) {
 	player := &Player{
 		game:        game,
 		conn:        conn,
+		name:        name,
 		position:    StartPosition,
 		orientation: Orientation{0, 0},
 		txQueue:     make(chan []byte, 128),
@@ -43,6 +45,8 @@ func (player *Player) PacketKeepAlive() {
 
 func (player *Player) PacketChatMessage(message string) {
 	log.Stderrf("PacketChatMessage message=%s", message)
+
+	player.game.Enqueue(func(game *Game) { game.SendChatMessage(message) })
 }
 
 func (player *Player) PacketFlying(flying bool) {

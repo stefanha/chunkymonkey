@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"time"
+	"fmt"
 )
 
 type XYZ struct {
@@ -40,7 +41,7 @@ func (game *Game) Login(conn net.Conn) {
 	}
 	WriteLogin(conn)
 
-	StartPlayer(game, conn)
+	StartPlayer(game, conn, username)
 }
 
 func (game *Game) Serve(addr string) {
@@ -64,11 +65,13 @@ func (game *Game) Serve(addr string) {
 func (game *Game) AddPlayer(player *Player) {
 	game.entityManager.AddEntity(&player.Entity)
 	game.players[player.EntityID] = player
+	game.SendChatMessage(fmt.Sprintf("%s has joined", player.name))
 }
 
 func (game *Game) RemovePlayer(player *Player) {
 	game.players[player.EntityID] = nil, false
 	game.entityManager.RemoveEntity(&player.Entity)
+	game.SendChatMessage(fmt.Sprintf("%s has left", player.name))
 }
 
 func (game *Game) MulticastPacket(packet []byte, except *Player) {
@@ -79,6 +82,12 @@ func (game *Game) MulticastPacket(packet []byte, except *Player) {
 
 		player.TransmitPacket(packet)
 	}
+}
+
+func (game *Game) SendChatMessage(message string) {
+	buf := &bytes.Buffer{}
+	WriteChatMessage(buf, message)
+	game.MulticastPacket(buf.Bytes(), nil)
 }
 
 func (game *Game) Enqueue(f func(*Game)) {

@@ -331,6 +331,16 @@ func ReadChatMessage(reader io.Reader, handler PacketHandler) (err os.Error) {
 	return
 }
 
+func WriteChatMessage(writer io.Writer, message string) (err os.Error) {
+	err = binary.Write(writer, binary.BigEndian, byte(packetIDChatMessage))
+	if err != nil {
+		return
+	}
+
+	err = WriteString(writer, message)
+	return
+}
+
 func ReadFlying(reader io.Reader, handler PacketHandler) (err os.Error) {
 	var packet struct {
 		Flying byte
