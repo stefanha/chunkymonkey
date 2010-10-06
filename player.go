@@ -59,8 +59,11 @@ func (player *Player) PacketPlayerPosition(position *XYZ, stance float64, flying
 }
 
 func (player *Player) PacketPlayerLook(orientation *Orientation, flying bool) {
-	log.Stderrf("PacketPlayerLook orientation=(%.2f, %.2f) flying=%v",
-		orientation.rotation, orientation.pitch, flying)
+	player.game.Enqueue(func (game *Game) {
+		buf := &bytes.Buffer{}
+		WriteEntityLook(buf, player.EntityID, orientation)
+		game.MulticastPacket(buf.Bytes(), player)
+	})
 }
 
 func (player *Player) PacketPlayerDigging(status byte, x int32, y byte, z int32, face byte) {

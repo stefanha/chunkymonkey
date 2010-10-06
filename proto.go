@@ -30,6 +30,7 @@ const (
 	packetIDArmAnimation       = 0x12
 	packetIDNamedEntitySpawn   = 0x14
 	packetIDDestroyEntity      = 0x1d
+	packetIDEntityLook         = 0x20
 	packetIDPreChunk           = 0x32
 	packetIDMapChunk           = 0x33
 	packetIDDisconnect         = 0xff
@@ -246,6 +247,22 @@ func WritePlayerPositionLook(writer io.Writer, position *XYZ, orientation *Orien
 		orientation.rotation,
 		orientation.pitch,
 		boolToByte(flying),
+	}
+	err = binary.Write(writer, binary.BigEndian, &packet)
+	return
+}
+
+func WriteEntityLook(writer io.Writer, entityID EntityID, orientation *Orientation) (err os.Error) {
+	var packet = struct {
+		PacketID byte
+		EntityID int32
+		Rotation byte
+		Pitch byte
+	}{
+		packetIDEntityLook,
+		int32(entityID),
+		byte(orientation.rotation * 256 / 360),
+		byte(orientation.pitch * 64 / 90),
 	}
 	err = binary.Write(writer, binary.BigEndian, &packet)
 	return
