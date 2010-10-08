@@ -31,6 +31,7 @@ const (
 	packetIDNamedEntitySpawn   = 0x14
 	packetIDDestroyEntity      = 0x1d
 	packetIDEntityLook         = 0x20
+	packetIDEntityTeleport     = 0x22
 	packetIDPreChunk           = 0x32
 	packetIDMapChunk           = 0x33
 	packetIDDisconnect         = 0xff
@@ -266,6 +267,27 @@ func WriteEntityLook(writer io.Writer, entityID EntityID, orientation *Orientati
 	}
 	err = binary.Write(writer, binary.BigEndian, &packet)
 	return
+}
+
+func WriteEntityTeleport(writer io.Writer, entityID EntityID, position *XYZ, orientation *Orientation) os.Error {
+	var packet = struct {
+		PacketID byte
+		EntityID int32
+		X int32
+		Y int32
+		Z int32
+		Rotation byte
+		Pitch byte
+	}{
+		packetIDEntityTeleport,
+		int32(entityID),
+		int32(position.x * PixelsPerBlock),
+		int32(position.y * PixelsPerBlock),
+		int32(position.z * PixelsPerBlock),
+		byte(orientation.rotation * 256 / 360),
+		byte(orientation.pitch * 64 / 90),
+	}
+	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
 func WritePreChunk(writer io.Writer, x int32, z int32, willSend bool) (err os.Error) {
