@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"math"
 	"bytes"
 )
 
@@ -56,10 +57,31 @@ func (player *Player) PacketFlying(flying bool) {
 func (player *Player) PacketPlayerPosition(position *XYZ, stance float64, flying bool) {
 	log.Stderrf("PacketPlayerPosition position=(%.2f, %.2f, %.2f) stance=%.2f flying=%v",
 		position.x, position.y, position.z, stance, flying)
+
+	player.game.Enqueue(func (game *Game) {
+		var delta = XYZ{position.x - player.position.x,
+		                position.y - player.position.y,
+		                position.z - player.position.z}
+		distance := math.Sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z)
+		if distance > 10 {
+			log.Stderrf("Discarding player position that is too far removed (%.2f, %.2f, %.2f)",
+				position.x, position.y, position.z)
+			return
+		}
+
+		player.position = *position
+
+		buf := &bytes.Buffer{}
+		WriteEntityTeleport(buf, player.EntityID, &player.position, &player.orientation)
+		game.MulticastPacket(buf.Bytes(), player)
+	})
 }
 
 func (player *Player) PacketPlayerLook(orientation *Orientation, flying bool) {
 	player.game.Enqueue(func (game *Game) {
+		// TODO input validation
+		player.orientation = *orientation
+
 		buf := &bytes.Buffer{}
 		WriteEntityLook(buf, player.EntityID, orientation)
 		game.MulticastPacket(buf.Bytes(), player)
