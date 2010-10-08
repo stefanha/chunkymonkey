@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path"
+	"flag"
 	"log"
 	"nbt"
 )
@@ -29,14 +30,24 @@ func loadStartPosition(worldPath string) {
 	}
 }
 
+func usage() {
+	os.Stderr.WriteString("usage: " + os.Args[0] + " <world>\n")
+	flag.PrintDefaults()
+}
+
 func main() {
-	if len(os.Args) != 2 {
-		os.Stderr.WriteString("usage: " + os.Args[0] + " <world>\n")
+	flag.Usage = usage
+	flag.Parse()
+
+	if flag.NArg() != 1 {
+		flag.Usage()
 		os.Exit(1)
 	}
 
-	loadStartPosition(os.Args[1])
-	chunkManager := NewChunkManager(os.Args[1])
+	worldPath := flag.Arg(0)
+
+	loadStartPosition(worldPath)
+	chunkManager := NewChunkManager(worldPath)
 	game := NewGame(chunkManager)
 	game.Serve(":25565")
 }

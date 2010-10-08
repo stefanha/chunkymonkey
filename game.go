@@ -58,7 +58,7 @@ func (game *Game) Serve(addr string) {
 			continue
 		}
 
-		go game.Login(conn)
+		go game.Login(WrapConn(conn))
 	}
 }
 

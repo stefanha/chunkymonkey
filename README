@@ -34,3 +34,24 @@ Serve up a single player world:
 
 $ ./chunkymonkey ~/.minecraft/saves/World1
 2010/10/03 16:32:13 Listening on  :25565
+
+Record/replay
+=============
+
+For debugging it is often useful to record a player's actions and replay them
+one or more times later.  This makes it possible to simulate multiplayer games
+without having real people logging in.
+
+To record a session:
+
+$ ./chunkymonkey --record player.log ~/.minecraft/saves/World1
+
+To replay a session:
+
+$ ./chunkymonkey --replay player.log ~/.minecraft/saves/World1 &
+$ java -jar Minecraft.jar  # start the first player (real human)
+$ nc localhost 25565       # start the second player (replay from log file)
+
+The recorded player will start when the second client connects to the server.
+Use netcat or a similar tool to start an otherwise idle TCP connection to the
+server.

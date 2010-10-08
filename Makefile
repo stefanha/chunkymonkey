@@ -12,5 +12,6 @@ GOFILES=\
 	game.go \
 	player.go \
 	entity.go \
+	record.go \
 
 include $(GOROOT)/src/Make.cmd
