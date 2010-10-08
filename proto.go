@@ -144,7 +144,7 @@ func WriteLogin(writer io.Writer) (err os.Error) {
 	return err
 }
 
-func WriteSpawnPosition(writer io.Writer, position *XYZ) (err os.Error) {
+func WriteSpawnPosition(writer io.Writer, position *XYZ) os.Error {
 	var packet = struct {
 		PacketID byte
 		X int32
@@ -156,11 +156,10 @@ func WriteSpawnPosition(writer io.Writer, position *XYZ) (err os.Error) {
 		int32(position.y),
 		int32(position.z),
 	}
-	err = binary.Write(writer, binary.BigEndian, &packet)
-	return
+	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
-func WriteTimeUpdate(writer io.Writer, time int64) (err os.Error) {
+func WriteTimeUpdate(writer io.Writer, time int64) os.Error {
 	var packet = struct {
 		PacketID byte
 		Time int64
@@ -168,9 +167,7 @@ func WriteTimeUpdate(writer io.Writer, time int64) (err os.Error) {
 		packetIDTimeUpdate,
 		time,
 	}
-
-	err = binary.Write(writer, binary.BigEndian, &packet)
-	return
+	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
 func WritePlayerInventory(writer io.Writer) (err os.Error) {
@@ -209,7 +206,7 @@ func WritePlayerInventory(writer io.Writer) (err os.Error) {
 	return
 }
 
-func WritePlayerPosition(writer io.Writer, position *XYZ, stance float64, flying bool) (err os.Error) {
+func WritePlayerPosition(writer io.Writer, position *XYZ, stance float64, flying bool) os.Error {
 	var packet = struct {
 		PacketID byte
 		X float64
@@ -225,11 +222,10 @@ func WritePlayerPosition(writer io.Writer, position *XYZ, stance float64, flying
 		position.z,
 		boolToByte(flying),
 	}
-	err = binary.Write(writer, binary.BigEndian, &packet)
-	return
+	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
-func WritePlayerPositionLook(writer io.Writer, position *XYZ, orientation *Orientation, stance float64, flying bool) (err os.Error) {
+func WritePlayerPositionLook(writer io.Writer, position *XYZ, orientation *Orientation, stance float64, flying bool) os.Error {
 	var packet = struct {
 		PacketID byte
 		X float64
@@ -249,11 +245,10 @@ func WritePlayerPositionLook(writer io.Writer, position *XYZ, orientation *Orien
 		orientation.pitch,
 		boolToByte(flying),
 	}
-	err = binary.Write(writer, binary.BigEndian, &packet)
-	return
+	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
-func WriteEntityLook(writer io.Writer, entityID EntityID, orientation *Orientation) (err os.Error) {
+func WriteEntityLook(writer io.Writer, entityID EntityID, orientation *Orientation) os.Error {
 	var packet = struct {
 		PacketID byte
 		EntityID int32
@@ -265,8 +260,7 @@ func WriteEntityLook(writer io.Writer, entityID EntityID, orientation *Orientati
 		byte(orientation.rotation * 256 / 360),
 		byte(orientation.pitch * 64 / 90),
 	}
-	err = binary.Write(writer, binary.BigEndian, &packet)
-	return
+	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
 func WriteEntityTeleport(writer io.Writer, entityID EntityID, position *XYZ, orientation *Orientation) os.Error {
@@ -290,7 +284,7 @@ func WriteEntityTeleport(writer io.Writer, entityID EntityID, position *XYZ, ori
 	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
-func WritePreChunk(writer io.Writer, x int32, z int32, willSend bool) (err os.Error) {
+func WritePreChunk(writer io.Writer, x int32, z int32, willSend bool) os.Error {
 	var packet = struct {
 		PacketID byte
 		X int32
@@ -302,8 +296,7 @@ func WritePreChunk(writer io.Writer, x int32, z int32, willSend bool) (err os.Er
 		z,
 		boolToByte(willSend),
 	}
-	err = binary.Write(writer, binary.BigEndian, &packet)
-	return
+	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
 func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
@@ -387,7 +380,7 @@ func WriteNamedEntitySpawn(writer io.Writer, entityID EntityID, name string, pos
 	return
 }
 
-func WriteDestroyEntity(writer io.Writer, entityID EntityID) (err os.Error) {
+func WriteDestroyEntity(writer io.Writer, entityID EntityID) os.Error {
 	var packet = struct {
 		PacketID byte
 		EntityID int32
@@ -395,9 +388,7 @@ func WriteDestroyEntity(writer io.Writer, entityID EntityID) (err os.Error) {
 		packetIDDestroyEntity,
 		int32(entityID),
 	}
-
-	err = binary.Write(writer, binary.BigEndian, &packet)
-	return
+	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
 func ReadKeepAlive(reader io.Reader, handler PacketHandler) (err os.Error) {
