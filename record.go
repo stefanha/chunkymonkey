@@ -19,8 +19,8 @@ type header struct {
 }
 
 type recorder struct {
-	conn net.Conn
-	log io.WriteCloser
+	conn          net.Conn
+	log           io.WriteCloser
 	lastTimestamp int64
 }
 
@@ -69,8 +69,8 @@ func (recorder *recorder) SetWriteTimeout(nsec int64) os.Error {
 }
 
 type replayer struct {
-	conn net.Conn
-	log io.ReadCloser
+	conn          net.Conn
+	log           io.ReadCloser
 	lastTimestamp int64
 }
 
@@ -133,7 +133,7 @@ var connections = 0
 // Interpose a recorder or replayer onto a network connection
 func WrapConn(raw net.Conn) (wrapped net.Conn) {
 	if *record != "" {
-		file, err := os.Open(*record, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0644)
+		file, err := os.Open(*record, os.O_CREAT|os.O_TRUNC|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Exit("WrapConn: ", err.String())
 		}

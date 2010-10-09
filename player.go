@@ -14,13 +14,13 @@ const (
 
 type Player struct {
 	Entity
-	game         *Game
-	conn         net.Conn
-	name         string
-	position     XYZ
-	orientation  Orientation
-	currentItem  int16
-	txQueue      chan []byte
+	game        *Game
+	conn        net.Conn
+	name        string
+	position    XYZ
+	orientation Orientation
+	currentItem int16
+	txQueue     chan []byte
 }
 
 func StartPlayer(game *Game, conn net.Conn, name string) {
@@ -58,11 +58,11 @@ func (player *Player) PacketPlayerPosition(position *XYZ, stance float64, flying
 	log.Stderrf("PacketPlayerPosition position=(%.2f, %.2f, %.2f) stance=%.2f flying=%v",
 		position.x, position.y, position.z, stance, flying)
 
-	player.game.Enqueue(func (game *Game) {
+	player.game.Enqueue(func(game *Game) {
 		var delta = XYZ{position.x - player.position.x,
-		                position.y - player.position.y,
-		                position.z - player.position.z}
-		distance := math.Sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z)
+			position.y - player.position.y,
+			position.z - player.position.z}
+		distance := math.Sqrt(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z)
 		if distance > 10 {
 			log.Stderrf("Discarding player position that is too far removed (%.2f, %.2f, %.2f)",
 				position.x, position.y, position.z)
@@ -78,7 +78,7 @@ func (player *Player) PacketPlayerPosition(position *XYZ, stance float64, flying
 }
 
 func (player *Player) PacketPlayerLook(orientation *Orientation, flying bool) {
-	player.game.Enqueue(func (game *Game) {
+	player.game.Enqueue(func(game *Game) {
 		// TODO input validation
 		player.orientation = *orientation
 
@@ -136,14 +136,14 @@ func (player *Player) sendChunks(writer io.Writer) {
 	playerX := ChunkCoord(player.position.x / ChunkSizeX)
 	playerZ := ChunkCoord(player.position.z / ChunkSizeZ)
 
-	for z := playerZ - chunkRadius; z < playerZ + chunkRadius; z++ {
-		for x := playerX - chunkRadius; x < playerX + chunkRadius; x++ {
+	for z := playerZ - chunkRadius; z < playerZ+chunkRadius; z++ {
+		for x := playerX - chunkRadius; x < playerX+chunkRadius; x++ {
 			WritePreChunk(writer, x, z, true)
 		}
 	}
 
-	for z := playerZ - chunkRadius; z < playerZ + chunkRadius; z++ {
-		for x := playerX - chunkRadius; x < playerX + chunkRadius; x++ {
+	for z := playerZ - chunkRadius; z < playerZ+chunkRadius; z++ {
+		for x := playerX - chunkRadius; x < playerX+chunkRadius; x++ {
 			chunk := player.game.chunkManager.Get(x, z)
 			WriteMapChunk(writer, chunk)
 		}

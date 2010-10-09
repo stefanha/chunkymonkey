@@ -76,7 +76,7 @@ func base36Encode(n int32) (s string) {
 	for n != 0 {
 		i := n % int32(len(alphabet))
 		n /= int32(len(alphabet))
-		s = string(alphabet[i : i+1]) + s
+		s = string(alphabet[i:i+1]) + s
 	}
 	if negative {
 		s = "-" + s

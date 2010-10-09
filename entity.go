@@ -8,7 +8,7 @@ type Entity struct {
 
 type EntityManager struct {
 	nextEntityID EntityID
-	entities map[EntityID]*Entity
+	entities     map[EntityID]*Entity
 }
 
 // Allocate and assign a new entity ID

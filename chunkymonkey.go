@@ -10,6 +10,7 @@ import (
 
 // The player's starting position is loaded from level.dat for now
 var StartPosition XYZ
+
 func loadStartPosition(worldPath string) {
 	file, err := os.Open(path.Join(worldPath, "level.dat"), os.O_RDONLY, 0)
 	if err != nil {
