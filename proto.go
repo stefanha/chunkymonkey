@@ -10,6 +10,10 @@ import (
 )
 
 const (
+	// Sometimes it is useful to convert block coordinates to pixels
+	PixelsPerBlock = 32
+
+	// Currently only this protocol version is supported
 	protocolVersion = 2
 
 	// Packet type IDs
@@ -284,7 +288,7 @@ func WriteEntityTeleport(writer io.Writer, entityID EntityID, position *XYZ, ori
 	return binary.Write(writer, binary.BigEndian, &packet)
 }
 
-func WritePreChunk(writer io.Writer, x int32, z int32, willSend bool) os.Error {
+func WritePreChunk(writer io.Writer, x ChunkCoord, z ChunkCoord, willSend bool) os.Error {
 	var packet = struct {
 		PacketID byte
 		X int32
@@ -292,8 +296,8 @@ func WritePreChunk(writer io.Writer, x int32, z int32, willSend bool) os.Error {
 		WillSend byte
 	}{
 		packetIDPreChunk,
-		x,
-		z,
+		int32(x),
+		int32(z),
 		boolToByte(willSend),
 	}
 	return binary.Write(writer, binary.BigEndian, &packet)
@@ -306,10 +310,10 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 		return
 	}
 
-	compressed.Write(chunk.blocks)
-	compressed.Write(chunk.blockData)
-	compressed.Write(chunk.blockLight)
-	compressed.Write(chunk.skyLight)
+	compressed.Write(chunk.Blocks)
+	compressed.Write(chunk.BlockData)
+	compressed.Write(chunk.BlockLight)
+	compressed.Write(chunk.SkyLight)
 	compressed.Close()
 	bs := buf.Bytes()
 
@@ -324,9 +328,9 @@ func WriteMapChunk(writer io.Writer, chunk *Chunk) (err os.Error) {
 		CompressedLength int32
 	}{
 		packetIDMapChunk,
-		chunk.x * ChunkSizeX,
+		int32(chunk.X * ChunkSizeX),
 		0,
-		chunk.z * ChunkSizeZ,
+		int32(chunk.Z * ChunkSizeZ),
 		ChunkSizeX - 1,
 		ChunkSizeY - 1,
 		ChunkSizeZ - 1,

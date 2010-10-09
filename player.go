@@ -133,8 +133,8 @@ func (player *Player) TransmitLoop() {
 }
 
 func (player *Player) sendChunks(writer io.Writer) {
-	playerX := int32(player.position.x) / ChunkSizeX
-	playerZ := int32(player.position.z) / ChunkSizeZ
+	playerX := ChunkCoord(player.position.x / ChunkSizeX)
+	playerZ := ChunkCoord(player.position.z / ChunkSizeZ)
 
 	for z := playerZ - chunkRadius; z < playerZ + chunkRadius; z++ {
 		for x := playerX - chunkRadius; x < playerX + chunkRadius; x++ {

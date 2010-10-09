@@ -1,3 +1,5 @@
+// Map chunks
+
 package main
 
 import (
@@ -9,44 +11,25 @@ import (
 )
 
 const (
+	// Chunk coordinates can be converted to block coordinates
 	ChunkSizeX = 16
 	ChunkSizeY = 128
 	ChunkSizeZ = 16
-
-	PixelsPerBlock = 32
 )
 
+type ChunkCoord int32
+
+// A chunk is slice of the world map
 type Chunk struct {
-	x, z       int32
-	blocks     []byte
-	blockData  []byte
-	skyLight   []byte
-	blockLight []byte
-	heightMap  []byte
+	X, Z       ChunkCoord
+	Blocks     []byte
+	BlockData  []byte
+	SkyLight   []byte
+	BlockLight []byte
+	HeightMap  []byte
 }
 
-// Unused, for debugging if there are issues with NBT chunks
-func fakeChunk(x int32, z int32) (chunk *Chunk) {
-	chunk = &Chunk{
-		x:          x,
-		z:          z,
-		blocks:     make([]byte, ChunkSizeX * ChunkSizeY * ChunkSizeZ),
-		blockData:  make([]byte, ChunkSizeX * ChunkSizeY * ChunkSizeZ / 2),
-		skyLight:   make([]byte, ChunkSizeX * ChunkSizeY * ChunkSizeZ / 2),
-		blockLight: make([]byte, ChunkSizeX * ChunkSizeY * ChunkSizeZ / 2),
-		heightMap:  make([]byte, ChunkSizeX * ChunkSizeZ),
-	}
-
-	for z := 0; z < ChunkSizeZ; z++ {
-		for x := 0; x < ChunkSizeX; x++ {
-			for y := 0; y < ChunkSizeY / 3; y++ {
-				chunk.blocks[y + (z * ChunkSizeY) + (x * ChunkSizeY * ChunkSizeZ)] = 2 // Grass
-			}
-		}
-	}
-	return
-}
-
+// Load a chunk from its NBT representation
 func loadChunk(reader io.Reader) (chunk *Chunk, err os.Error) {
 	level, err := nbt.Read(reader)
 	if err != nil {
@@ -54,17 +37,18 @@ func loadChunk(reader io.Reader) (chunk *Chunk, err os.Error) {
 	}
 
 	chunk = &Chunk{
-		x:          level.Lookup("/Level/xPos").(*nbt.Int).Value,
-		z:          level.Lookup("/Level/zPos").(*nbt.Int).Value,
-		blocks:     level.Lookup("/Level/Blocks").(*nbt.ByteArray).Value,
-		blockData:  level.Lookup("/Level/Data").(*nbt.ByteArray).Value,
-		skyLight:   level.Lookup("/Level/SkyLight").(*nbt.ByteArray).Value,
-		blockLight: level.Lookup("/Level/BlockLight").(*nbt.ByteArray).Value,
-		heightMap:  level.Lookup("/Level/HeightMap").(*nbt.ByteArray).Value,
+		X:          ChunkCoord(level.Lookup("/Level/xPos").(*nbt.Int).Value),
+		Z:          ChunkCoord(level.Lookup("/Level/zPos").(*nbt.Int).Value),
+		Blocks:     level.Lookup("/Level/Blocks").(*nbt.ByteArray).Value,
+		BlockData:  level.Lookup("/Level/Data").(*nbt.ByteArray).Value,
+		SkyLight:   level.Lookup("/Level/SkyLight").(*nbt.ByteArray).Value,
+		BlockLight: level.Lookup("/Level/BlockLight").(*nbt.ByteArray).Value,
+		HeightMap:  level.Lookup("/Level/HeightMap").(*nbt.ByteArray).Value,
 	}
 	return
 }
 
+// ChunkManager contains all chunks and can look them up
 type ChunkManager struct {
 	worldPath string
 	chunks    map[uint64]*Chunk
@@ -100,12 +84,13 @@ func base36Encode(n int32) (s string) {
 	return
 }
 
-func (mgr *ChunkManager) chunkPath(x int32, z int32) string {
-	return path.Join(mgr.worldPath, base36Encode(x&63), base36Encode(z&63),
-		"c."+base36Encode(x)+"."+base36Encode(z)+".dat")
+func (mgr *ChunkManager) chunkPath(x ChunkCoord, z ChunkCoord) string {
+	return path.Join(mgr.worldPath, base36Encode(int32(x&63)), base36Encode(int32(z&63)),
+		"c."+base36Encode(int32(x))+"."+base36Encode(int32(z))+".dat")
 }
 
-func (mgr *ChunkManager) Get(x int32, z int32) (chunk *Chunk) {
+// Get a chunk at given coordinates
+func (mgr *ChunkManager) Get(x ChunkCoord, z ChunkCoord) (chunk *Chunk) {
 	key := uint64(x)<<32 | uint64(uint32(z))
 	chunk, ok := mgr.chunks[key]
 	if ok {
