@@ -66,11 +66,11 @@ func (game *Game) AddPlayer(player *Player) {
 	game.entityManager.AddEntity(&player.Entity)
 	game.players[player.EntityID] = player
 	game.SendChatMessage(fmt.Sprintf("%s has joined", player.name))
-	game.sendNamedEntitySpawn(player)
+	game.chunkManager.AddPlayer(player)
 }
 
 func (game *Game) RemovePlayer(player *Player) {
-	game.sendDestroyEntity(player.EntityID, player)
+	game.chunkManager.RemovePlayer(player)
 	game.players[player.EntityID] = nil, false
 	game.entityManager.RemoveEntity(&player.Entity)
 	game.SendChatMessage(fmt.Sprintf("%s has left", player.name))
@@ -90,18 +90,6 @@ func (game *Game) SendChatMessage(message string) {
 	buf := &bytes.Buffer{}
 	WriteChatMessage(buf, message)
 	game.MulticastPacket(buf.Bytes(), nil)
-}
-
-func (game *Game) sendNamedEntitySpawn(player *Player) {
-	buf := &bytes.Buffer{}
-	WriteNamedEntitySpawn(buf, player.EntityID, player.name, &player.position, &player.orientation, player.currentItem)
-	game.MulticastPacket(buf.Bytes(), player)
-}
-
-func (game *Game) sendDestroyEntity(entityID EntityID, except *Player) {
-	buf := &bytes.Buffer{}
-	WriteDestroyEntity(buf, entityID)
-	game.MulticastPacket(buf.Bytes(), except)
 }
 
 func (game *Game) Enqueue(f func(*Game)) {

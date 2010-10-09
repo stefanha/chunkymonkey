@@ -8,10 +8,6 @@ import (
 	"bytes"
 )
 
-const (
-	chunkRadius = 10
-)
-
 type Player struct {
 	Entity
 	game        *Game
@@ -136,14 +132,14 @@ func (player *Player) sendChunks(writer io.Writer) {
 	playerX := ChunkCoord(player.position.x / ChunkSizeX)
 	playerZ := ChunkCoord(player.position.z / ChunkSizeZ)
 
-	for z := playerZ - chunkRadius; z < playerZ+chunkRadius; z++ {
-		for x := playerX - chunkRadius; x < playerX+chunkRadius; x++ {
+	for z := playerZ - ChunkRadius; z <= playerZ+ChunkRadius; z++ {
+		for x := playerX - ChunkRadius; x <= playerX+ChunkRadius; x++ {
 			WritePreChunk(writer, x, z, true)
 		}
 	}
 
-	for z := playerZ - chunkRadius; z < playerZ+chunkRadius; z++ {
-		for x := playerX - chunkRadius; x < playerX+chunkRadius; x++ {
+	for z := playerZ - ChunkRadius; z <= playerZ+ChunkRadius; z++ {
+		for x := playerX - ChunkRadius; x <= playerX+ChunkRadius; x++ {
 			chunk := player.game.chunkManager.Get(x, z)
 			WriteMapChunk(writer, chunk)
 		}
