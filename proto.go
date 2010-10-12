@@ -593,6 +593,10 @@ func ReadPacket(reader io.Reader, handler PacketHandler) (err os.Error) {
 	var packetID byte
 
 	err = binary.Read(reader, binary.BigEndian, &packetID)
+	if err != nil {
+		return err
+	}
+
 	fn, ok := readFns[packetID]
 	if !ok {
 		return os.NewError(fmt.Sprintf("unhandled packet type %#x", packetID))

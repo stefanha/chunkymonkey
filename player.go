@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"io"
 	"log"
 	"net"
@@ -104,14 +105,20 @@ func (player *Player) PacketArmAnimation(forward bool) {
 
 func (player *Player) PacketDisconnect(reason string) {
 	log.Stderrf("PacketDisconnect reason=%s", reason)
-	player.game.Enqueue(func(game *Game) { game.RemovePlayer(player) })
+	player.game.Enqueue(func(game *Game) {
+		game.RemovePlayer(player)
+		close(player.txQueue)
+		player.conn.Close()
+	})
 }
 
 func (player *Player) ReceiveLoop() {
 	for {
 		err := ReadPacket(player.conn, player)
 		if err != nil {
-			log.Stderr("ReceiveLoop failed: ", err.String())
+			if err != os.EOF {
+				log.Stderr("ReceiveLoop failed: ", err.String())
+			}
 			return
 		}
 	}
@@ -120,9 +127,15 @@ func (player *Player) ReceiveLoop() {
 func (player *Player) TransmitLoop() {
 	for {
 		bs := <-player.txQueue
+		if bs == nil {
+			return // txQueue closed
+		}
+
 		_, err := player.conn.Write(bs)
 		if err != nil {
-			log.Stderr("TransmitLoop failed: ", err.String())
+			if err != os.EOF {
+				log.Stderr("TransmitLoop failed: ", err.String())
+			}
 			return
 		}
 	}
@@ -147,6 +160,9 @@ func (player *Player) sendChunks(writer io.Writer) {
 }
 
 func (player *Player) TransmitPacket(packet []byte) {
+	if packet == nil {
+		return // skip empty packets
+	}
 	player.txQueue <- packet
 }
 
